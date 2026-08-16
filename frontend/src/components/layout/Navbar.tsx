@@ -38,7 +38,7 @@ export const Navbar: React.FC = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-white/80 dark:bg-[#080c14]/80 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 py-3.5 shadow-lg shadow-black/5"
+          ? "bg-white/95 dark:bg-[#080c14]/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/80 py-3.5 shadow-md shadow-slate-900/5"
           : "bg-transparent py-5"
       }`}
     >
@@ -56,20 +56,20 @@ export const Navbar: React.FC = () => {
         </Link>
 
         {/* Nav Links */}
-        <nav className="hidden md:flex items-center gap-1 p-1 rounded-full bg-slate-200/50 dark:bg-slate-900/60 border border-slate-300/40 dark:border-slate-800/60 backdrop-blur-md text-xs font-semibold">
+        <nav className="hidden md:flex items-center gap-1 p-1 rounded-full bg-slate-200/80 dark:bg-slate-900/60 border border-slate-300/80 dark:border-slate-800/60 backdrop-blur-md text-xs font-semibold">
           <Link
             href="/"
             className={`px-4 py-1.5 rounded-full transition-all ${
               pathname === "/"
-                ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-extrabold"
+                : "text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             Product
           </Link>
           <a
             href="#features"
-            className="px-4 py-1.5 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+            className="px-4 py-1.5 rounded-full text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
           >
             Features
           </a>
@@ -77,15 +77,15 @@ export const Navbar: React.FC = () => {
             href="/pricing"
             className={`px-4 py-1.5 rounded-full transition-all ${
               pathname === "/pricing"
-                ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-extrabold"
+                : "text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             Pricing
           </Link>
           <a
             href="#faq"
-            className="px-4 py-1.5 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+            className="px-4 py-1.5 rounded-full text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
           >
             FAQ
           </a>
@@ -95,7 +95,7 @@ export const Navbar: React.FC = () => {
         <div className="hidden md:flex items-center gap-3">
           <button
             onClick={toggleTheme}
-            className="p-2.5 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+            className="p-2.5 rounded-xl text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 shadow-sm"
             title="Toggle theme"
           >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -110,7 +110,7 @@ export const Navbar: React.FC = () => {
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/login">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="text-slate-700 dark:text-slate-200 font-bold">
                   Sign In
                 </Button>
               </Link>
@@ -127,13 +127,13 @@ export const Navbar: React.FC = () => {
         <div className="flex md:hidden items-center gap-2">
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800"
+            className="p-2 rounded-xl text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
           >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800"
+            className="p-2 rounded-xl text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -142,8 +142,8 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden glass-card border-b border-slate-200 dark:border-slate-800 p-6 space-y-4 bg-white/95 dark:bg-slate-950/95 shadow-2xl animate-fadeIn">
-          <nav className="flex flex-col space-y-3 font-medium text-sm text-slate-700 dark:text-slate-200">
+        <div className="md:hidden glass-card border-b border-slate-200 dark:border-slate-800 p-6 space-y-4 bg-white/98 dark:bg-slate-950/98 shadow-2xl animate-fadeIn">
+          <nav className="flex flex-col space-y-3 font-semibold text-sm text-slate-800 dark:text-slate-200">
             <Link href="/" onClick={() => setMobileMenuOpen(false)}>Product</Link>
             <a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a>
             <Link href="/pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
@@ -154,7 +154,7 @@ export const Navbar: React.FC = () => {
               <Button variant="outline" className="w-full">Sign In</Button>
             </Link>
             <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="gradient" className="w-full">Get Started Free</Button>
+              <Button variant="glow" className="w-full">Get Started Free</Button>
             </Link>
           </div>
         </div>

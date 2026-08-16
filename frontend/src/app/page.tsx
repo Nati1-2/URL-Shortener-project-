@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, ShieldCheck, Check, Zap, Play, Star, ChevronRight } from "lucide-react";
+import { ArrowRight, Sparkles, ShieldCheck, Check, Zap, Play } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { UrlShortenerWidget } from "@/components/landing/UrlShortenerWidget";
 import { UrlTransformationAnimation } from "@/components/landing/UrlTransformationAnimation";
@@ -12,7 +12,6 @@ import { LogoCloud } from "@/components/landing/LogoCloud";
 import { Testimonials } from "@/components/landing/Testimonials";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { PRICING_PLANS } from "@/lib/constants";
-import { Badge } from "@/components/ui/Badge";
 
 export default function LandingPage() {
   return (
@@ -92,17 +91,17 @@ export default function LandingPage() {
       {/* Customer Testimonials & Reviews */}
       <Testimonials />
 
-      {/* Pricing Preview Section */}
-      <section className="py-24 bg-slate-900/90 text-white relative overflow-hidden border-t border-slate-800">
+      {/* Pricing Preview Section with Full Light & Dark Support */}
+      <section className="py-24 bg-slate-100/70 dark:bg-slate-900/90 text-slate-900 dark:text-white relative overflow-hidden border-t border-slate-200 dark:border-slate-800 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 text-center">
           <div className="space-y-3 max-w-2xl mx-auto">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-blue-400">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-blue-600 dark:text-blue-400">
               Simple & Transparent Pricing
             </span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight">
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
               Predictable plans built to scale with your traffic.
             </h2>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               No hidden fees, no limits on growth. Switch or cancel anytime.
             </p>
           </div>
@@ -113,8 +112,8 @@ export default function LandingPage() {
                 key={plan.id}
                 className={`rounded-3xl p-8 border transition-all duration-300 flex flex-col justify-between ${
                   plan.highlight
-                    ? "bg-slate-800/95 border-blue-500/70 shadow-2xl relative scale-105"
-                    : "bg-slate-950/70 border-slate-800"
+                    ? "bg-white dark:bg-slate-800/95 border-blue-500/80 shadow-2xl relative scale-105"
+                    : "bg-white/80 dark:bg-slate-950/70 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md"
                 }`}
               >
                 {plan.badge && (
@@ -123,16 +122,16 @@ export default function LandingPage() {
                   </span>
                 )}
                 <div>
-                  <h3 className="text-xl font-bold">{plan.name}</h3>
-                  <p className="text-xs text-slate-400 mt-1 min-h-[36px]">{plan.description}</p>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{plan.name}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 min-h-[36px]">{plan.description}</p>
                   <div className="my-6">
-                    <span className="text-4xl font-extrabold">${plan.monthlyPrice}</span>
-                    <span className="text-xs text-slate-400"> / month</span>
+                    <span className="text-4xl font-extrabold text-slate-900 dark:text-white">${plan.monthlyPrice}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400"> / month</span>
                   </div>
-                  <ul className="space-y-3 text-xs text-slate-300 mb-8 pt-4 border-t border-slate-800">
+                  <ul className="space-y-3 text-xs text-slate-700 dark:text-slate-300 mb-8 pt-4 border-t border-slate-200 dark:border-slate-800">
                     {plan.features.map((f, i) => (
                       <li key={i} className="flex items-center gap-2.5">
-                        <Check className="w-4 h-4 text-blue-400 shrink-0" />
+                        <Check className="w-4 h-4 text-blue-500 shrink-0" />
                         <span>{f}</span>
                       </li>
                     ))}

@@ -60,29 +60,29 @@ export const DashboardPreview: React.FC = () => {
         </div>
 
         {/* Mock Window Container */}
-        <div className="rounded-3xl glass-card border border-slate-200/80 dark:border-slate-800/80 p-5 sm:p-7 shadow-2xl overflow-hidden backdrop-blur-2xl relative">
+        <div className="rounded-3xl glass-card border border-slate-200/90 dark:border-slate-800/80 p-5 sm:p-7 shadow-2xl overflow-hidden backdrop-blur-2xl relative bg-white/95 dark:bg-slate-900/75">
           {/* Mock Window Topbar */}
-          <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/80 dark:border-slate-800/80">
+          <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/90 dark:border-slate-800/80">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-rose-500/80" />
               <div className="w-3 h-3 rounded-full bg-amber-500/80" />
               <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-              <span className="ml-2 text-xs font-mono text-slate-400 hidden sm:inline">
+              <span className="ml-2 text-xs font-mono text-slate-500 dark:text-slate-400 hidden sm:inline">
                 https://app.linkpulse.io/dashboard
               </span>
             </div>
 
             <div className="flex items-center gap-3">
               {activeTab === "analytics" && (
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-[11px] font-bold">
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-700/60">
                   {(["24h", "7d", "30d"] as const).map((r) => (
                     <button
                       key={r}
                       onClick={() => setTimeRange(r)}
                       className={`px-2.5 py-1 rounded-lg uppercase transition-all ${
                         timeRange === r
-                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm"
-                          : "text-slate-400 hover:text-slate-200"
+                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm font-extrabold"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                       }`}
                     >
                       {r}
@@ -99,66 +99,66 @@ export const DashboardPreview: React.FC = () => {
             <div className="space-y-6 animate-fadeIn">
               {/* Metric Quick Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="p-4 rounded-2xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/40 dark:border-slate-700/40 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 space-y-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Total Tracked Clicks
                   </span>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+                  <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
                     {timeRange === "24h" ? "12,480" : timeRange === "7d" ? "142,890" : "542,100"}
                   </p>
-                  <span className="text-xs font-bold text-emerald-500 flex items-center gap-0.5">
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
                     <ArrowUpRight className="w-3.5 h-3.5" /> +24.5% volume
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/40 dark:border-slate-700/40 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 space-y-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Unique Visitors
                   </span>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+                  <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
                     {timeRange === "24h" ? "9,120" : timeRange === "7d" ? "98,420" : "390,200"}
                   </p>
-                  <span className="text-xs font-bold text-emerald-500 flex items-center gap-0.5">
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
                     <ArrowUpRight className="w-3.5 h-3.5" /> +18.2% new leads
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/40 dark:border-slate-700/40 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 space-y-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Average CTR
                   </span>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+                  <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
                     14.2%
                   </p>
-                  <span className="text-xs font-bold text-blue-500 flex items-center gap-0.5">
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-0.5">
                     <ArrowUpRight className="w-3.5 h-3.5" /> Top 5% Industry
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/40 dark:border-slate-700/40 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 space-y-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Routing Latency
                   </span>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+                  <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
                     18ms
                   </p>
-                  <span className="text-xs font-bold text-emerald-500">Global Edge CDN</span>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Global Edge CDN</span>
                 </div>
               </div>
 
               {/* Bar Graph visualization */}
-              <div className="h-56 rounded-2xl bg-slate-100/50 dark:bg-slate-800/30 p-5 flex items-end justify-between gap-2 border border-slate-200/50 dark:border-slate-800/50">
+              <div className="h-56 rounded-2xl bg-slate-50 dark:bg-slate-800/30 p-5 flex items-end justify-between gap-2 border border-slate-200 dark:border-slate-800/50">
                 {chartHeights[timeRange].map((h, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
                     <div
                       style={{ height: `${(h / 250) * 100}%` }}
-                      className="w-full bg-brand-gradient rounded-t-lg transition-all duration-500 group-hover:brightness-125 relative"
+                      className="w-full bg-brand-gradient rounded-t-lg transition-all duration-500 group-hover:brightness-110 relative"
                     >
-                      <div className="opacity-0 group-hover:opacity-100 absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-slate-900 text-white rounded text-[9px] font-mono whitespace-nowrap transition-opacity pointer-events-none z-20">
+                      <div className="opacity-0 group-hover:opacity-100 absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-slate-900 text-white rounded text-[9px] font-mono whitespace-nowrap transition-opacity pointer-events-none z-20 shadow-md">
                         {h * 42} clicks
                       </div>
                     </div>
-                    <span className="text-[9px] text-slate-400 font-mono">
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 font-mono font-semibold">
                       {i + 1}
                     </span>
                   </div>
@@ -178,12 +178,12 @@ export const DashboardPreview: React.FC = () => {
               ].map((l, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 hover:border-blue-500/40 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 hover:border-blue-500/40 transition-colors"
                 >
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
                       <p className="font-bold text-slate-900 dark:text-white">{l.title}</p>
-                      <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-blue-500/10 text-blue-500">
+                      <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
                         {l.tag}
                       </span>
                     </div>
@@ -203,7 +203,7 @@ export const DashboardPreview: React.FC = () => {
           {/* Pane 3: QR Studio */}
           {activeTab === "qr" && (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-10 py-8 animate-fadeIn">
-              <div className="p-6 bg-white rounded-3xl shadow-2xl border border-slate-200 inline-block">
+              <div className="p-6 bg-white rounded-3xl shadow-xl border border-slate-200 inline-block">
                 <QrCode className="w-36 h-36 text-slate-900" />
               </div>
               <div className="space-y-3 text-center sm:text-left max-w-sm">
@@ -211,7 +211,7 @@ export const DashboardPreview: React.FC = () => {
                 <h4 className="font-extrabold text-slate-900 dark:text-white text-xl">
                   Ultra High-Res Dynamic QR
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Customize center brand logos, foreground gradients, frame templates, and download vector SVG for billboards and print media.
                 </p>
               </div>
