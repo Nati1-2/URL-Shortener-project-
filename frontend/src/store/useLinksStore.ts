@@ -14,6 +14,8 @@ interface LinksState {
   deleteLink: (id: string) => void;
   bulkDeleteLinks: (ids: string[]) => void;
   getLinkById: (id: string) => ShortLink | undefined;
+  getLinkByShortCode: (code: string) => ShortLink | undefined;
+  recordClick: (code: string) => void;
 }
 
 export const useLinksStore = create<LinksState>((set, get) => ({
@@ -56,4 +58,13 @@ export const useLinksStore = create<LinksState>((set, get) => ({
       links: state.links.filter((link) => !ids.includes(link.id)),
     })),
   getLinkById: (id) => get().links.find((l) => l.id === id),
+  getLinkByShortCode: (code) => get().links.find((l) => l.shortCode.toLowerCase() === code.toLowerCase()),
+  recordClick: (code) =>
+    set((state) => ({
+      links: state.links.map((l) =>
+        l.shortCode.toLowerCase() === code.toLowerCase()
+          ? { ...l, clicks: l.clicks + 1 }
+          : l
+      ),
+    })),
 }));

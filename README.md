@@ -1,23 +1,33 @@
-# URL Shortener Frontend
+# LinkPulse - Modern URL Shortener
 
-This project is prepared as a frontend-only Next.js app in `frontend/`.
+A full-featured Next.js URL shortener web application with real-time analytics, link management, custom slugs, QR code generation, and interactive dashboards.
 
-## Local development
+## Local Development
 
-```powershell
+Run from the root directory:
+
+```bash
+npm install
+npm run dev
+```
+
+Or directly inside `frontend/`:
+
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## Deploy to Vercel
+## Deployment (Vercel, Replit, Render, Netlify)
 
-When importing the repository in Vercel:
+The project includes root `vercel.json` and `package.json` configurations.
 
-- Framework Preset: `Next.js`
-- Root Directory: `frontend`
-- Install Command: `npm install`
-- Build Command: `npm run build`
-- Output Directory: leave empty/default
+### Option 1: Vercel (Automatic Root Detection)
+Simply push/import the repository into Vercel. Vercel will automatically detect `vercel.json` and deploy `frontend/` without additional configuration.
 
-Vercel will install dependencies from `frontend/package-lock.json` and build the app with the standard Next.js adapter.
+### Option 2: Vercel (Manual Settings if needed)
+- **Framework Preset**: `Next.js`
+- **Root Directory**: `frontend`
+- **Install Command**: `npm install`
+- **Build Command**: `npm run build`
