@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ClickEvent {
+  id             String   @id @default(uuid())
+  linkId         String
+  workspaceId    String
+  shortCode      String
+  ipHash         String
+  country        String   @default("United States")
+  region         String?
+  city           String?
+  deviceType     String   @default("Desktop")
+  browser        String   @default("Chrome")
+  os             String   @default("macOS")
+  referrer       String   @default("Direct Traffic")
+  userAgent      String?
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  timestamp      DateTime @default(now())
+
+  @@index([workspaceId, timestamp])
+  @@index([linkId, timestamp])
+  @@index([timestamp])
+}
+
+model DailyMetric {
+  id             String   @id @default(uuid())
+  workspaceId    String
+  linkId         String?
+  date           String   // Format: YYYY-MM-DD
+  clicks         Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@unique([workspaceId, date, linkId])
+  @@index([workspaceId, date])
+}
+
+model CountryMetric {
+  id          String   @id @default(uuid())
+  workspaceId String
+  country     String
+  flag        String   @default("🇺🇸")
+  clicks      Int      @default(0)
+  percentage  Float    @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, country])
+  @@index([workspaceId])
+}
+
+model DeviceMetric {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String   // Desktop, Mobile, Tablet
+  clicks      Int      @default(0)
+  percentage  Float    @default(0)
+  color       String   @default("#3b82f6")
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+model BrowserMetric {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String   // Chrome, Safari, Firefox, Edge
+  clicks      Int      @default(0)
+  percentage  Float    @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+model ReferrerMetric {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String   // Google Search, Twitter / X, Direct Traffic
+  clicks      Int      @default(0)
+  percentage  Float    @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}

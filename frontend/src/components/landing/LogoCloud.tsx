@@ -13,16 +13,16 @@ export const LogoCloud: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 border-y border-slate-200/60 dark:border-slate-800/60 bg-slate-100/50 dark:bg-slate-900/30">
+    <section className="py-16 border-y border-slate-200/60 dark:border-slate-800/60 bg-slate-100/40 dark:bg-slate-900/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
         <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
           Trusted by growth teams at world-class companies
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 opacity-75 grayscale hover:grayscale-0 transition-all duration-300">
+        <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-300">
           {logos.map((logo, idx) => (
             <span
               key={idx}
-              className={`text-xl sm:text-2xl text-slate-700 dark:text-slate-300 ${logo.font}`}
+              className={`text-xl sm:text-2xl text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-colors duration-200 ${logo.font}`}
             >
               {logo.name}
             </span>

@@ -1,33 +1,44 @@
-# LinkPulse - Modern URL Shortener
+# LinkPulse — Enterprise URL Shortener & Real-Time Analytics SaaS Platform
 
-A full-featured Next.js URL shortener web application with real-time analytics, link management, custom slugs, QR code generation, and interactive dashboards.
+LinkPulse is a distributed URL shortening and click telemetry platform engineered with microservices, asynchronous message brokering, multi-tenant workspace isolation, edge caching, and a responsive frontend.
 
-## Local Development
+## Architecture
 
-Run from the root directory:
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS, Framer Motion, TanStack Query, Zustand, Recharts.
+- **Backend Microservices**:
+  - **API Gateway** (`:8000`): Dynamic reverse proxy, JWT guard, rate limiting, request correlation IDs.
+  - **Auth Service** (`:8001`): Registration, Argon2/Bcrypt password hashing, token rotation, sessions (`auth_db`).
+  - **Link Service** (`:8002`): Collision-safe cryptographic shortcodes, custom slugs, tags, QR studio (`link_db`).
+  - **Redirect Service** (`:8003`): Sub-millisecond 301/302 redirects, Redis caching, non-blocking telemetry publishing.
+  - **Analytics Service** (`:8004`): Timeline velocity, geographic distribution, device hardware breakdown (`analytics_db`).
+  - **Workspace Service** (`:8005`): Multi-tenant isolation, invitations, RBAC roles (`workspace_db`).
+  - **Domain Service** (`:8006`): Custom branded domains, DNS CNAME verification (`domain_db`).
+  - **Billing Service** (`:8007`): Stripe subscriptions, plans catalog, portal (`billing_db`).
+  - **Notification Service** (`:8008`): In-app notification vault and email dispatch queues (`notification_db`).
+- **Asynchronous Event Workers**:
+  - **Analytics Worker**: Consumes `ClickRecorded` events, aggregates metrics, and broadcasts to Redis Pub/Sub.
+  - **Notification Worker**: Consumes `NotificationRequested` events and writes in-app notifications.
+  - **Webhook Worker**: Consumes `WebhookReceived` events with idempotency deduplication.
+- **Data & Message Infrastructure**:
+  - **PostgreSQL 16**: 7 dedicated databases (`auth_db`, `link_db`, `analytics_db`, `workspace_db`, `domain_db`, `billing_db`, `notification_db`).
+  - **Redis 7**: Sub-millisecond cache, Pub/Sub live feed, distributed rate limiting.
+  - **RabbitMQ 3.13**: Topic exchanges, durable queues, dead-letter exchange (DLQ).
 
+## Getting Started
+
+### 1. Launch with Docker Compose
 ```bash
-npm install
-npm run dev
+docker compose up --build
 ```
 
-Or directly inside `frontend/`:
+### 2. Access the Platform
+- Web App UI: `http://localhost:3000`
+- API Gateway: `http://localhost:8000/api/v1`
+- Fast Edge Redirect: `http://localhost:8003/:shortCode`
+- RabbitMQ Console: `http://localhost:15672` (guest / guest)
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## Deployment (Vercel, Replit, Render, Netlify)
-
-The project includes root `vercel.json` and `package.json` configurations.
-
-### Option 1: Vercel (Automatic Root Detection)
-Simply push/import the repository into Vercel. Vercel will automatically detect `vercel.json` and deploy `frontend/` without additional configuration.
-
-### Option 2: Vercel (Manual Settings if needed)
-- **Framework Preset**: `Next.js`
-- **Root Directory**: `frontend`
-- **Install Command**: `npm install`
-- **Build Command**: `npm run build`
+## Documentation
+- [Architecture Guide](docs/architecture.md)
+- [Microservices Catalog](docs/services.md)
+- [Event-Driven Architecture](docs/events.md)
+- [Local Development Guide](docs/local-development.md)

@@ -1,0 +1,316 @@
+version: "3.9"
+
+services:
+  # ----------------------------------------------------
+  # Infrastructure: PostgreSQL Multi-Database
+  # ----------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: linkpulse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres-init/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------
+  # Infrastructure: Redis Cache & Pub/Sub
+  # ----------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: linkpulse-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------
+  # Infrastructure: RabbitMQ Event Broker
+  # ----------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: linkpulse-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------
+  # Microservices Layer
+  # ----------------------------------------------------
+  api-gateway:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: api-gateway
+    container_name: linkpulse-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: 8000
+      NODE_ENV: production
+      AUTH_SERVICE_URL: http://auth-service:8001
+      LINK_SERVICE_URL: http://link-service:8002
+      REDIRECT_SERVICE_URL: http://redirect-service:8003
+      ANALYTICS_SERVICE_URL: http://analytics-service:8004
+      WORKSPACE_SERVICE_URL: http://workspace-service:8005
+      DOMAIN_SERVICE_URL: http://domain-service:8006
+      BILLING_SERVICE_URL: http://billing-service:8007
+      NOTIFICATION_SERVICE_URL: http://notification-service:8008
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+      - auth-service
+      - link-service
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: auth-service
+    container_name: linkpulse-auth-service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      PORT: 8001
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/auth_db?schema=public
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      JWT_ACCESS_SECRET: your_jwt_access_secret_change_me
+      JWT_REFRESH_SECRET: your_jwt_refresh_secret_change_me
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  link-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: link-service
+    container_name: linkpulse-link-service
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      PORT: 8002
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/link_db?schema=public
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  redirect-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: redirect-service
+    container_name: linkpulse-redirect-service
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    environment:
+      PORT: 8003
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/link_db?schema=public
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: analytics-service
+    container_name: linkpulse-analytics-service
+    restart: unless-stopped
+    ports:
+      - "8004:8004"
+    environment:
+      PORT: 8004
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/analytics_db?schema=public
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  workspace-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: workspace-service
+    container_name: linkpulse-workspace-service
+    restart: unless-stopped
+    ports:
+      - "8005:8005"
+    environment:
+      PORT: 8005
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/workspace_db?schema=public
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  domain-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: domain-service
+    container_name: linkpulse-domain-service
+    restart: unless-stopped
+    ports:
+      - "8006:8006"
+    environment:
+      PORT: 8006
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/domain_db?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: billing-service
+    container_name: linkpulse-billing-service
+    restart: unless-stopped
+    ports:
+      - "8007:8007"
+    environment:
+      PORT: 8007
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/billing_db?schema=public
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      STRIPE_SECRET_KEY: sk_test_your_stripe_secret_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: notification-service
+    container_name: linkpulse-notification-service
+    restart: unless-stopped
+    ports:
+      - "8008:8008"
+    environment:
+      PORT: 8008
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/notification_db?schema=public
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ----------------------------------------------------
+  # Background Workers
+  # ----------------------------------------------------
+  analytics-worker:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.worker
+      args:
+        WORKER_NAME: analytics-worker
+    container_name: linkpulse-analytics-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/analytics_db?schema=public
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification-worker:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.worker
+      args:
+        WORKER_NAME: notification-worker
+    container_name: linkpulse-notification-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/notification_db?schema=public
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # ----------------------------------------------------
+  # Next.js Frontend Application
+  # ----------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: linkpulse-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_USE_MOCK_API: "false"
+      NEXT_PUBLIC_API_GATEWAY_URL: "http://localhost:8000/api/v1"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

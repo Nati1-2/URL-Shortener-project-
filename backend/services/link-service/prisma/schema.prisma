@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Link {
+  id             String    @id @default(uuid())
+  workspaceId    String    @default("ws_main")
+  createdBy      String    @default("usr_alex_vance")
+  title          String
+  originalUrl    String
+  shortCode      String    @unique
+  domain         String    @default("ly.nk")
+  shortUrl       String
+  status         String    @default("active") // active, password_protected, expired, archived
+  clicks         Int       @default(0)
+  passwordHash   String?
+  expiresAt      DateTime?
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  tags           String[]  @default([])
+  qrFgColor      String    @default("#0f172a")
+  qrBgColor      String    @default("#ffffff")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@index([shortCode])
+  @@index([domain, shortCode])
+  @@index([createdAt])
+}

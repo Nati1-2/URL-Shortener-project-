@@ -1,0 +1,30 @@
+{
+  "name": "linkpulse-backend",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "workers/*"
+  ],
+  "scripts": {
+    "build:packages": "npm --workspace=@linkpulse/common run build && npm --workspace=@linkpulse/events run build && npm --workspace=@linkpulse/logger run build",
+    "build": "npm run build:packages && npm --workspaces run build --if-present",
+    "dev:gateway": "npm --workspace=@linkpulse/api-gateway run dev",
+    "dev:auth": "npm --workspace=@linkpulse/auth-service run dev",
+    "dev:link": "npm --workspace=@linkpulse/link-service run dev",
+    "dev:redirect": "npm --workspace=@linkpulse/redirect-service run dev",
+    "dev:analytics": "npm --workspace=@linkpulse/analytics-service run dev",
+    "dev:workspace": "npm --workspace=@linkpulse/workspace-service run dev",
+    "dev:domain": "npm --workspace=@linkpulse/domain-service run dev",
+    "dev:billing": "npm --workspace=@linkpulse/billing-service run dev",
+    "dev:notification": "npm --workspace=@linkpulse/notification-service run dev",
+    "seed": "ts-node scripts/seed.ts",
+    "test": "npm --workspaces run test --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,19 @@
+FROM node:20-alpine AS builder
+
+ARG WORKER_NAME
+WORKDIR /app
+
+# Copy root workspace and packages
+COPY package*.json ./
+COPY packages ./packages
+COPY workers/${WORKER_NAME} ./workers/${WORKER_NAME}
+
+# Install dependencies and build
+RUN npm install
+RUN npm --workspace=@linkpulse/common run build
+RUN npm --workspace=@linkpulse/events run build
+RUN npm --workspace=@linkpulse/logger run build
+
+RUN npm --workspace=@linkpulse/${WORKER_NAME} run build
+
+CMD npm --workspace=@linkpulse/${WORKER_NAME} run start

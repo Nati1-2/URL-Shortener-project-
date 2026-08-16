@@ -8,16 +8,10 @@ import {
   Bell,
   CreditCard,
   AlertTriangle,
-  Copy,
-  Check,
   Plus,
   Trash2,
-  ShieldCheck,
   Globe,
-  Building2,
   Users,
-  ExternalLink,
-  Sparkles,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
@@ -35,6 +29,7 @@ import { useWorkspaceMembers, useInviteMember } from "@/hooks/useWorkspaces";
 import { useDomains, useAddDomain, useVerifyDomain } from "@/hooks/useDomains";
 import { useSubscription } from "@/hooks/useBilling";
 import { Role } from "@/types";
+import { RevealOnScroll } from "@/components/animation/ScrollReveal";
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -138,382 +133,402 @@ export default function SettingsPage() {
 
         <main className="p-6 sm:p-8 space-y-8 max-w-6xl mx-auto w-full">
           {/* Header Title */}
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Workspace & Account Settings
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Manage personal profile, API tokens, workspace members, custom domains, and subscription billing.
-            </p>
-          </div>
+          <RevealOnScroll direction="up" delay={0.02}>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                Workspace & Account Settings
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Manage personal profile, API tokens, workspace members, custom domains, and subscription billing.
+              </p>
+            </div>
+          </RevealOnScroll>
 
           {/* Settings Tabs */}
-          <Tabs
-            tabs={[
-              { id: "profile", label: "Profile", icon: <User className="w-4 h-4" /> },
-              { id: "team", label: "Team & Members", icon: <Users className="w-4 h-4" /> },
-              { id: "domains", label: "Custom Domains", icon: <Globe className="w-4 h-4" /> },
-              { id: "security", label: "Security & 2FA", icon: <Lock className="w-4 h-4" /> },
-              { id: "apikeys", label: "API Keys", icon: <Key className="w-4 h-4" /> },
-              { id: "notifications", label: "Notifications", icon: <Bell className="w-4 h-4" /> },
-              { id: "billing", label: "Billing & Plans", icon: <CreditCard className="w-4 h-4" /> },
-              { id: "danger", label: "Danger Zone", icon: <AlertTriangle className="w-4 h-4" /> },
-            ]}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-          />
+          <RevealOnScroll direction="up" delay={0.06}>
+            <Tabs
+              tabs={[
+                { id: "profile", label: "Profile", icon: <User className="w-4 h-4" /> },
+                { id: "team", label: "Team & Members", icon: <Users className="w-4 h-4" /> },
+                { id: "domains", label: "Custom Domains", icon: <Globe className="w-4 h-4" /> },
+                { id: "security", label: "Security & 2FA", icon: <Lock className="w-4 h-4" /> },
+                { id: "apikeys", label: "API Keys", icon: <Key className="w-4 h-4" /> },
+                { id: "notifications", label: "Notifications", icon: <Bell className="w-4 h-4" /> },
+                { id: "billing", label: "Billing & Plans", icon: <CreditCard className="w-4 h-4" /> },
+                { id: "danger", label: "Danger Zone", icon: <AlertTriangle className="w-4 h-4" /> },
+              ]}
+              activeTab={activeTab}
+              onChange={setActiveTab}
+            />
+          </RevealOnScroll>
 
           {/* Tab 1: Profile Settings */}
           {activeTab === "profile" && (
-            <Card className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-                Personal Profile Details
-              </h3>
-              <form onSubmit={handleSaveProfile} className="space-y-4 max-w-xl">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={user?.avatar}
-                    alt={user?.name}
-                    className="w-16 h-16 rounded-2xl object-cover ring-2 ring-blue-500/30"
-                  />
-                  <div className="space-y-1">
-                    <Button variant="outline" size="sm">
-                      Upload Avatar
-                    </Button>
-                    <p className="text-[11px] text-slate-400">JPG, PNG or GIF up to 5MB.</p>
+            <RevealOnScroll direction="up" delay={0.08}>
+              <Card className="space-y-6">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+                  Personal Profile Details
+                </h3>
+                <form onSubmit={handleSaveProfile} className="space-y-4 max-w-xl">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={user?.avatar}
+                      alt={user?.name}
+                      className="w-16 h-16 rounded-2xl object-cover ring-2 ring-blue-500/30"
+                    />
+                    <div className="space-y-1">
+                      <Button variant="outline" size="sm">
+                        Upload Avatar
+                      </Button>
+                      <p className="text-[11px] text-slate-400">JPG, PNG or GIF up to 5MB.</p>
+                    </div>
                   </div>
-                </div>
 
-                <Input
-                  label="Full Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Work Email Address"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                    Short Bio
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    className="w-full p-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  <Input
+                    label="Full Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
                   />
-                </div>
-                <Button type="submit" variant="glow" size="md">
-                  Save Changes
-                </Button>
-              </form>
-            </Card>
+                  <Input
+                    label="Work Email Address"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                      Short Bio
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      className="w-full p-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                    />
+                  </div>
+                  <Button type="submit" variant="glow" size="md">
+                    Save Changes
+                  </Button>
+                </form>
+              </Card>
+            </RevealOnScroll>
           )}
 
           {/* Tab 2: Team & Workspace Members */}
           {activeTab === "team" && (
-            <Card className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                    Workspace Members & Roles
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Invite collaborators and control access permissions.
-                  </p>
-                </div>
-                <Button
-                  variant="glow"
-                  size="sm"
-                  onClick={() => setShowInviteModal(true)}
-                  leftIcon={<Plus className="w-4 h-4" />}
-                >
-                  Invite Member
-                </Button>
-              </div>
-
-              <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                {members?.map((mem) => (
-                  <div key={mem.id} className="py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={mem.user.avatar}
-                        alt={mem.user.name}
-                        className="w-9 h-9 rounded-xl object-cover ring-1 ring-blue-500/20"
-                      />
-                      <div>
-                        <p className="font-bold text-slate-900 dark:text-white">{mem.user.name}</p>
-                        <p className="text-[11px] text-slate-400">{mem.user.email}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className="px-2.5 py-1 text-[10px] font-extrabold uppercase rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                        {mem.role}
-                      </span>
-                      <span className="text-[11px] text-slate-400 hidden sm:inline">
-                        Joined {new Date(mem.joinedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {/* Tab 3: Custom Domains */}
-          {activeTab === "domains" && (
-            <Card className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                    Branded Custom Domains
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Connect your own domain with automatic SSL edge provisioning.
-                  </p>
-                </div>
-                <Button
-                  variant="glow"
-                  size="sm"
-                  onClick={() => setShowNewDomainModal(true)}
-                  leftIcon={<Plus className="w-4 h-4" />}
-                >
-                  Add Custom Domain
-                </Button>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                {domains?.map((dom) => (
-                  <div
-                    key={dom.id}
-                    className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-slate-200/50 dark:border-slate-800/50"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-slate-900 dark:text-white font-mono text-sm">{dom.hostname}</p>
-                        {dom.isDefault && <Badge variant="info">Default</Badge>}
-                      </div>
-                      <p className="text-[11px] text-slate-400">CNAME target: cname.linkpulse.io</p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <Badge variant={dom.status === "verified" ? "success" : "warning"}>
-                        {dom.status === "verified" ? "SSL Active" : "DNS Pending"}
-                      </Badge>
-                      {dom.status !== "verified" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => verifyDomainMutation.mutate(dom.id)}
-                        >
-                          Verify DNS
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {/* Tab 4: Security & 2FA */}
-          {activeTab === "security" && (
-            <div className="space-y-6">
+            <RevealOnScroll direction="up" delay={0.08}>
               <Card className="space-y-6">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-                  Change Password
-                </h3>
-                <form onSubmit={handleSaveSecurity} className="space-y-4 max-w-xl">
-                  <Input
-                    label="Current Password"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                  />
-                  <Input
-                    label="New Password"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                  <Button type="submit" variant="glow" size="md">
-                    Update Password
-                  </Button>
-                </form>
-              </Card>
-
-              <Card className="space-y-4">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-                  Two-Factor Authentication (2FA)
-                </h3>
-                <Switch
-                  checked={twoFactorEnabled}
-                  onChange={setTwoFactorEnabled}
-                  label="Enable Authenticator App 2FA"
-                  description="Use Google Authenticator or 1Password for login verification."
-                />
-              </Card>
-            </div>
-          )}
-
-          {/* Tab 5: API Keys */}
-          {activeTab === "apikeys" && (
-            <Card className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                    REST API Tokens
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Secret API keys to programmatically shorten links via Node.js or Python SDK.
-                  </p>
-                </div>
-                <Button
-                  variant="glow"
-                  size="sm"
-                  onClick={() => setShowNewKeyModal(true)}
-                  leftIcon={<Plus className="w-4 h-4" />}
-                >
-                  Generate Secret Token
-                </Button>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                {apiKeys.map((key) => (
-                  <div
-                    key={key.id}
-                    className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-slate-200/50 dark:border-slate-800/50"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-bold text-slate-900 dark:text-white">{key.name}</p>
-                      <p className="font-mono text-blue-500">{key.token}</p>
-                      <span className="text-[10px] text-slate-400">Created {key.created}</span>
-                    </div>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => handleRevokeApiKey(key.id)}
-                      leftIcon={<Trash2 className="w-3.5 h-3.5" />}
-                    >
-                      Revoke Key
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {/* Tab 6: Notifications */}
-          {activeTab === "notifications" && (
-            <Card className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-                Notification Preferences
-              </h3>
-              <div className="space-y-6 max-w-xl">
-                <Switch
-                  checked={emailDigest}
-                  onChange={setEmailDigest}
-                  label="Weekly Click Telemetry Digest"
-                  description="Receive a summary of click performance every Monday."
-                />
-                <Switch
-                  checked={expiryAlerts}
-                  onChange={setExpiryAlerts}
-                  label="Link Expiration Warning Alerts"
-                  description="Get notified when a link is approaching its expiration date."
-                />
-                <Switch
-                  checked={trafficSurgeAlerts}
-                  onChange={setTrafficSurgeAlerts}
-                  label="Sudden Traffic Surge Notifications"
-                  description="Alert me when a short link receives >1,000 clicks/hour."
-                />
-              </div>
-            </Card>
-          )}
-
-          {/* Tab 7: Billing & Subscription */}
-          {activeTab === "billing" && (
-            <div className="space-y-6">
-              <Card className="space-y-4 border-2 border-blue-500/30 bg-blue-500/5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <Badge variant="purple">{subscription?.planName || "Pro Growth Plan Active"}</Badge>
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">$19 / Month</h3>
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                      Workspace Members & Roles
+                    </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Your subscription renews automatically on Sept 14, 2026.
+                      Invite collaborators and control access permissions.
                     </p>
                   </div>
-                  <Button variant="glow" size="md">
-                    Upgrade to Enterprise
+                  <Button
+                    variant="glow"
+                    size="sm"
+                    onClick={() => setShowInviteModal(true)}
+                    leftIcon={<Plus className="w-4 h-4" />}
+                  >
+                    Invite Member
                   </Button>
                 </div>
 
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2 text-xs">
-                  <div className="flex justify-between font-semibold">
-                    <span>Monthly Click Limit Usage</span>
-                    <span className="text-blue-500">
-                      {subscription?.usedClicksCurrentPeriod.toLocaleString() || "14,230"} / {subscription?.monthlyClicksLimit.toLocaleString() || "50,000"} Clicks (28%)
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-brand-gradient rounded-full w-[28%]" />
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="space-y-4">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  Payment Invoices History
-                </h3>
-                <div className="space-y-2 text-xs">
-                  {[
-                    { id: "inv_101", date: "Aug 01, 2026", amount: "$19.00", status: "Paid" },
-                    { id: "inv_100", date: "Jul 01, 2026", amount: "$19.00", status: "Paid" },
-                  ].map((inv) => (
-                    <div
-                      key={inv.id}
-                      className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-between"
-                    >
-                      <div className="space-y-0.5">
-                        <p className="font-bold text-slate-900 dark:text-white">Pro Plan Subscription</p>
-                        <p className="text-[10px] text-slate-400">{inv.date}</p>
-                      </div>
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                  {members?.map((mem) => (
+                    <div key={mem.id} className="py-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className="font-bold text-slate-900 dark:text-white">{inv.amount}</span>
-                        <Badge variant="success">{inv.status}</Badge>
+                        <img
+                          src={mem.user.avatar}
+                          alt={mem.user.name}
+                          className="w-9 h-9 rounded-xl object-cover ring-1 ring-blue-500/20"
+                        />
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white">{mem.user.name}</p>
+                          <p className="text-[11px] text-slate-400">{mem.user.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <span className="px-2.5 py-1 text-[10px] font-extrabold uppercase rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                          {mem.role}
+                        </span>
+                        <span className="text-[11px] text-slate-400 hidden sm:inline">
+                          Joined {new Date(mem.joinedAt).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               </Card>
-            </div>
+            </RevealOnScroll>
+          )}
+
+          {/* Tab 3: Custom Domains */}
+          {activeTab === "domains" && (
+            <RevealOnScroll direction="up" delay={0.08}>
+              <Card className="space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                      Branded Custom Domains
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Connect your own domain with automatic SSL edge provisioning.
+                    </p>
+                  </div>
+                  <Button
+                    variant="glow"
+                    size="sm"
+                    onClick={() => setShowNewDomainModal(true)}
+                    leftIcon={<Plus className="w-4 h-4" />}
+                  >
+                    Add Custom Domain
+                  </Button>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  {domains?.map((dom) => (
+                    <div
+                      key={dom.id}
+                      className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-slate-200/50 dark:border-slate-800/50"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-900 dark:text-white font-mono text-sm">{dom.hostname}</p>
+                          {dom.isDefault && <Badge variant="info">Default</Badge>}
+                        </div>
+                        <p className="text-[11px] text-slate-400">CNAME target: cname.linkpulse.io</p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Badge variant={dom.status === "verified" ? "success" : "warning"}>
+                          {dom.status === "verified" ? "SSL Active" : "DNS Pending"}
+                        </Badge>
+                        {dom.status !== "verified" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => verifyDomainMutation.mutate(dom.id)}
+                          >
+                            Verify DNS
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </RevealOnScroll>
+          )}
+
+          {/* Tab 4: Security & 2FA */}
+          {activeTab === "security" && (
+            <RevealOnScroll direction="up" delay={0.08}>
+              <div className="space-y-6">
+                <Card className="space-y-6">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+                    Change Password
+                  </h3>
+                  <form onSubmit={handleSaveSecurity} className="space-y-4 max-w-xl">
+                    <Input
+                      label="Current Password"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                    />
+                    <Input
+                      label="New Password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                    <Button type="submit" variant="glow" size="md">
+                      Update Password
+                    </Button>
+                  </form>
+                </Card>
+
+                <Card className="space-y-4">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+                    Two-Factor Authentication (2FA)
+                  </h3>
+                  <Switch
+                    checked={twoFactorEnabled}
+                    onChange={setTwoFactorEnabled}
+                    label="Enable Authenticator App 2FA"
+                    description="Use Google Authenticator or 1Password for login verification."
+                  />
+                </Card>
+              </div>
+            </RevealOnScroll>
+          )}
+
+          {/* Tab 5: API Keys */}
+          {activeTab === "apikeys" && (
+            <RevealOnScroll direction="up" delay={0.08}>
+              <Card className="space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                      REST API Tokens
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Secret API keys to programmatically shorten links via Node.js or Python SDK.
+                    </p>
+                  </div>
+                  <Button
+                    variant="glow"
+                    size="sm"
+                    onClick={() => setShowNewKeyModal(true)}
+                    leftIcon={<Plus className="w-4 h-4" />}
+                  >
+                    Generate Secret Token
+                  </Button>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  {apiKeys.map((key) => (
+                    <div
+                      key={key.id}
+                      className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-slate-200/50 dark:border-slate-800/50"
+                    >
+                      <div className="space-y-1">
+                        <p className="font-bold text-slate-900 dark:text-white">{key.name}</p>
+                        <p className="font-mono text-blue-500">{key.token}</p>
+                        <span className="text-[10px] text-slate-400">Created {key.created}</span>
+                      </div>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleRevokeApiKey(key.id)}
+                        leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+                      >
+                        Revoke Key
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </RevealOnScroll>
+          )}
+
+          {/* Tab 6: Notifications */}
+          {activeTab === "notifications" && (
+            <RevealOnScroll direction="up" delay={0.08}>
+              <Card className="space-y-6">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+                  Notification Preferences
+                </h3>
+                <div className="space-y-6 max-w-xl">
+                  <Switch
+                    checked={emailDigest}
+                    onChange={setEmailDigest}
+                    label="Weekly Click Telemetry Digest"
+                    description="Receive a summary of click performance every Monday."
+                  />
+                  <Switch
+                    checked={expiryAlerts}
+                    onChange={setExpiryAlerts}
+                    label="Link Expiration Warning Alerts"
+                    description="Get notified when a link is approaching its expiration date."
+                  />
+                  <Switch
+                    checked={trafficSurgeAlerts}
+                    onChange={setTrafficSurgeAlerts}
+                    label="Sudden Traffic Surge Notifications"
+                    description="Alert me when a short link receives >1,000 clicks/hour."
+                  />
+                </div>
+              </Card>
+            </RevealOnScroll>
+          )}
+
+          {/* Tab 7: Billing & Subscription */}
+          {activeTab === "billing" && (
+            <RevealOnScroll direction="up" delay={0.08}>
+              <div className="space-y-6">
+                <Card className="space-y-4 border-2 border-blue-500/30 bg-blue-500/5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <Badge variant="purple">{subscription?.planName || "Pro Growth Plan Active"}</Badge>
+                      <h3 className="text-2xl font-black text-slate-900 dark:text-white">$19 / Month</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Your subscription renews automatically on Sept 14, 2026.
+                      </p>
+                    </div>
+                    <Button variant="glow" size="md">
+                      Upgrade to Enterprise
+                    </Button>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+                    <div className="flex justify-between font-semibold">
+                      <span>Monthly Click Limit Usage</span>
+                      <span className="text-blue-500">
+                        {subscription?.usedClicksCurrentPeriod.toLocaleString() || "14,230"} / {subscription?.monthlyClicksLimit.toLocaleString() || "50,000"} Clicks (28%)
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-brand-gradient rounded-full w-[28%]" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="space-y-4">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    Payment Invoices History
+                  </h3>
+                  <div className="space-y-2 text-xs">
+                    {[
+                      { id: "inv_101", date: "Aug 01, 2026", amount: "$19.00", status: "Paid" },
+                      { id: "inv_100", date: "Jul 01, 2026", amount: "$19.00", status: "Paid" },
+                    ].map((inv) => (
+                      <div
+                        key={inv.id}
+                        className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-between"
+                      >
+                        <div className="space-y-0.5">
+                          <p className="font-bold text-slate-900 dark:text-white">Pro Plan Subscription</p>
+                          <p className="text-[10px] text-slate-400">{inv.date}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-slate-900 dark:text-white">{inv.amount}</span>
+                          <Badge variant="success">{inv.status}</Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            </RevealOnScroll>
           )}
 
           {/* Tab 8: Danger Zone */}
           {activeTab === "danger" && (
-            <Card className="space-y-4 border-2 border-red-500/30 bg-red-500/5">
-              <h3 className="text-lg font-bold text-red-600 dark:text-red-400">
-                Danger Zone
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
-                Permanently delete this workspace, wipe all shortened link routing rules, and destroy click analytics telemetry.
-              </p>
-              <Button
-                variant="danger"
-                size="md"
-                onClick={() => setShowDeleteAccountModal(true)}
-                leftIcon={<Trash2 className="w-4 h-4" />}
-              >
-                Delete Workspace
-              </Button>
-            </Card>
+            <RevealOnScroll direction="up" delay={0.08}>
+              <Card className="space-y-4 border-2 border-red-500/30 bg-red-500/5">
+                <h3 className="text-lg font-bold text-red-600 dark:text-red-400">
+                  Danger Zone
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+                  Permanently delete this workspace, wipe all shortened link routing rules, and destroy click analytics telemetry.
+                </p>
+                <Button
+                  variant="danger"
+                  size="md"
+                  onClick={() => setShowDeleteAccountModal(true)}
+                  leftIcon={<Trash2 className="w-4 h-4" />}
+                >
+                  Delete Workspace
+                </Button>
+              </Card>
+            </RevealOnScroll>
           )}
         </main>
       </div>

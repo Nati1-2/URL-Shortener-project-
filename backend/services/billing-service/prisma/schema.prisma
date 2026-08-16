@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Subscription {
+  id                      String   @id @default(uuid())
+  workspaceId             String   @unique
+  planId                  String   @default("pro")
+  planName                String   @default("Pro Growth Plan")
+  status                  String   @default("active") // active, trialing, past_due, canceled
+  stripeCustomerId        String?
+  stripeSubscriptionId    String?
+  monthlyClicksLimit      Int      @default(50000)
+  usedClicksCurrentPeriod Int      @default(14230)
+  currentPeriodEnd        DateTime
+  cancelAtPeriodEnd       Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([stripeCustomerId])
+}
+
+model Invoice {
+  id          String   @id @default(uuid())
+  workspaceId String
+  amount      Float
+  currency    String   @default("USD")
+  status      String   @default("paid")
+  invoiceUrl  String?
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId])
+}

@@ -11,7 +11,7 @@ export const Footer: React.FC = () => {
     <footer className="bg-slate-100/90 dark:bg-[#05080f] text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800/80 pt-16 pb-12 overflow-hidden transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 pb-12 border-b border-slate-200 dark:border-slate-800/60">
-          {/* Brand Col */}
+          {/* Brand Column */}
           <div className="md:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-brand-gradient flex items-center justify-center text-white shadow-lg border border-white/20">
@@ -27,19 +27,22 @@ export const Footer: React.FC = () => {
             <div className="pt-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
               <a
                 href="#"
-                className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:text-blue-600 dark:hover:text-white transition-colors shadow-sm"
+                className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:text-blue-600 dark:hover:text-white hover:scale-105 transition-all shadow-sm"
+                title="Twitter"
               >
                 <Twitter className="w-4 h-4" />
               </a>
               <a
                 href="#"
-                className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:text-blue-600 dark:hover:text-white transition-colors shadow-sm"
+                className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:text-blue-600 dark:hover:text-white hover:scale-105 transition-all shadow-sm"
+                title="GitHub"
               >
                 <Github className="w-4 h-4" />
               </a>
               <a
                 href="#"
-                className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:text-blue-600 dark:hover:text-white transition-colors shadow-sm"
+                className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:text-blue-600 dark:hover:text-white hover:scale-105 transition-all shadow-sm"
+                title="LinkedIn"
               >
                 <Linkedin className="w-4 h-4" />
               </a>
@@ -51,7 +54,7 @@ export const Footer: React.FC = () => {
             <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-slate-200">
               Product
             </h4>
-            <ul className="space-y-2 text-sm font-medium">
+            <ul className="space-y-2.5 text-sm font-medium">
               <li><Link href="/" className="hover:text-blue-600 dark:hover:text-white transition-colors">URL Shortener</Link></li>
               <li><Link href="/create" className="hover:text-blue-600 dark:hover:text-white transition-colors">QR Code Generator</Link></li>
               <li><Link href="/analytics" className="hover:text-blue-600 dark:hover:text-white transition-colors">Click Analytics</Link></li>
@@ -65,7 +68,7 @@ export const Footer: React.FC = () => {
             <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-slate-200">
               Resources
             </h4>
-            <ul className="space-y-2 text-sm font-medium">
+            <ul className="space-y-2.5 text-sm font-medium">
               <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">API Documentation</a></li>
               <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">Integrations</a></li>
               <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">Customer Stories</a></li>
@@ -80,7 +83,7 @@ export const Footer: React.FC = () => {
               Stay Updated
             </h4>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Subscribe to get product updates and growth marketing advice.
+              Subscribe to get product updates and telemetry growth insights.
             </p>
             <form onSubmit={(e) => e.preventDefault()} className="space-y-2">
               <input
@@ -99,9 +102,9 @@ export const Footer: React.FC = () => {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-4">
           <p>© {new Date().getFullYear()} {APP_NAME} SaaS Inc. All rights reserved.</p>
           <div className="flex items-center gap-6 font-medium">
-            <a href="#" className="hover:text-slate-900 dark:hover:text-slate-200 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-slate-900 dark:hover:text-slate-200 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-slate-900 dark:hover:text-slate-200 transition-colors">Cookie Settings</a>
+            <a href="#" className="hover:text-slate-900 dark:text-slate-300 transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-slate-900 dark:text-slate-300 transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-slate-900 dark:text-slate-300 transition-colors">Cookie Settings</a>
           </div>
         </div>
       </div>

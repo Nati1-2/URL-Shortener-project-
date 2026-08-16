@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useRegister } from "@/hooks/useAuth";
 import { useToastStore } from "@/store/useToastStore";
+import { RevealOnScroll } from "@/components/animation/ScrollReveal";
 
 export default function RegisterPage() {
   const registerMutation = useRegister();
@@ -68,187 +69,193 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-16 flex items-center justify-center px-4 relative">
+    <div className="min-h-screen pt-24 pb-16 flex items-center justify-center px-4 relative overflow-hidden">
       {/* Background Lighting */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg h-96 bg-indigo-600/15 rounded-full blur-[140px] pointer-events-none -z-10" />
 
       <div className="w-full max-w-md space-y-6">
-        {/* Top Header Logo */}
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-brand-gradient flex items-center justify-center text-white shadow-lg border border-white/20">
-              <Link2 className="w-5 h-5 stroke-[2.5]" />
-            </div>
-            <span className="font-extrabold text-2xl text-slate-900 dark:text-white tracking-tight">
-              Link<span className="text-gradient">Pulse</span>
-            </span>
-          </Link>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-            Start your 14-day free trial
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            No credit card required. Unlimited links & analytics access.
-          </p>
-        </div>
+        <RevealOnScroll direction="down" delay={0.05} duration={0.6}>
+          {/* Top Header Logo */}
+          <div className="text-center space-y-2">
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-brand-gradient flex items-center justify-center text-white shadow-lg border border-white/20">
+                <Link2 className="w-5 h-5 stroke-[2.5]" />
+              </div>
+              <span className="font-extrabold text-2xl text-slate-900 dark:text-white tracking-tight">
+                Link<span className="text-gradient">Pulse</span>
+              </span>
+            </Link>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              Start your 14-day free trial
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              No credit card required. Unlimited links & analytics access.
+            </p>
+          </div>
+        </RevealOnScroll>
 
-        {/* Card Form */}
-        <div className="glass-card rounded-3xl p-8 border border-slate-200/80 dark:border-slate-800/80 shadow-2xl bg-white/95 dark:bg-slate-900/95 space-y-6">
-          {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs font-semibold text-red-600 dark:text-red-400">
-              {errorMsg}
-            </div>
-          )}
+        <RevealOnScroll direction="up" delay={0.1} duration={0.65}>
+          {/* Card Form */}
+          <div className="glass-card rounded-3xl p-8 border border-slate-200/80 dark:border-slate-800/80 shadow-2xl bg-white/95 dark:bg-slate-900/95 space-y-6">
+            {errorMsg && (
+              <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs font-semibold text-red-600 dark:text-red-400">
+                {errorMsg}
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Full Name"
-              type="text"
-              placeholder="Alex Vance"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              leftIcon={<User className="w-4 h-4 text-slate-400" />}
-              required
-            />
-
-            <Input
-              label="Work Email"
-              type="email"
-              placeholder="alex@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
-              required
-            />
-
-            <div className="space-y-1.5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <Input
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Create a strong password..."
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
-                rightIcon={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                }
+                label="Full Name"
+                type="text"
+                placeholder="Alex Vance"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                leftIcon={<User className="w-4 h-4 text-slate-400" />}
                 required
               />
 
-              {/* Password Strength Indicator */}
-              {password && (
-                <div className="space-y-1 pt-1">
-                  <div className="flex items-center justify-between text-[11px] font-semibold">
-                    <span className="text-slate-500 dark:text-slate-400">Strength:</span>
-                    <span
-                      className={
-                        strengthScore >= 3 ? "text-emerald-500" : "text-amber-500"
-                      }
+              <Input
+                label="Work Email"
+                type="email"
+                placeholder="alex@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
+                required
+              />
+
+              <div className="space-y-1.5">
+                <Input
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Create a strong password..."
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
+                  rightIcon={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none cursor-pointer"
                     >
-                      {strengthLabels[strengthScore]}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1.5 h-1.5">
-                    {[0, 1, 2, 3].map((step) => (
-                      <div
-                        key={step}
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          step <= strengthScore - 1
-                            ? strengthColors[strengthScore]
-                            : "bg-slate-200 dark:bg-slate-800"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Terms checkbox */}
-            <div className="pt-2">
-              <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-600 dark:text-slate-400">
-                <input
-                  type="checkbox"
-                  checked={acceptTerms}
-                  onChange={(e) => setAcceptTerms(e.target.checked)}
-                  className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  }
+                  required
                 />
-                <span>
-                  I agree to the{" "}
-                  <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">
-                    Terms of Service
-                  </a>{" "}
-                  and{" "}
-                  <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">
-                    Privacy Policy
-                  </a>
-                  .
-                </span>
-              </label>
+
+                {/* Password Strength Indicator */}
+                {password && (
+                  <div className="space-y-1 pt-1">
+                    <div className="flex items-center justify-between text-[11px] font-semibold">
+                      <span className="text-slate-500 dark:text-slate-400">Strength:</span>
+                      <span
+                        className={
+                          strengthScore >= 3 ? "text-emerald-500" : "text-amber-500"
+                        }
+                      >
+                        {strengthLabels[strengthScore]}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5 h-1.5">
+                      {[0, 1, 2, 3].map((step) => (
+                        <div
+                          key={step}
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            step <= strengthScore - 1
+                              ? strengthColors[strengthScore]
+                              : "bg-slate-200 dark:bg-slate-800"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Terms checkbox */}
+              <div className="pt-2">
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-600 dark:text-slate-400 select-none">
+                  <input
+                    type="checkbox"
+                    checked={acceptTerms}
+                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span>
+                    I agree to the{" "}
+                    <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">
+                      Privacy Policy
+                    </a>
+                    .
+                  </span>
+                </label>
+              </div>
+
+              <Button
+                type="submit"
+                variant="glow"
+                size="lg"
+                isLoading={registerMutation.isPending}
+                className="w-full text-base font-bold cursor-pointer"
+                rightIcon={<ArrowRight className="w-4 h-4" />}
+              >
+                Create Free Account
+              </Button>
+            </form>
+
+            {/* Social Sign-up Divider */}
+            <div className="relative flex items-center justify-center my-4">
+              <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+              <span className="bg-white dark:bg-slate-900 px-3 text-[10px] uppercase font-bold text-slate-400 shrink-0">
+                Or sign up with
+              </span>
             </div>
 
-            <Button
-              type="submit"
-              variant="glow"
-              size="lg"
-              isLoading={registerMutation.isPending}
-              className="w-full text-base font-bold"
-              rightIcon={<ArrowRight className="w-4 h-4" />}
-            >
-              Create Free Account
-            </Button>
-          </form>
-
-          {/* Social Sign-up Divider */}
-          <div className="relative flex items-center justify-center my-4">
-            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-            <span className="bg-white dark:bg-slate-900 px-3 text-[10px] uppercase font-bold text-slate-400 shrink-0">
-              Or sign up with
-            </span>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => handleSubmit({ preventDefault: () => {} } as any)}
+                className="text-xs"
+              >
+                Google SSO
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => handleSubmit({ preventDefault: () => {} } as any)}
+                leftIcon={<Github className="w-4 h-4" />}
+                className="text-xs"
+              >
+                GitHub
+              </Button>
+            </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={() => handleSubmit({ preventDefault: () => {} } as any)}
-              className="text-xs"
-            >
-              Google SSO
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={() => handleSubmit({ preventDefault: () => {} } as any)}
-              leftIcon={<Github className="w-4 h-4" />}
-              className="text-xs"
-            >
-              GitHub
-            </Button>
-          </div>
-        </div>
+        </RevealOnScroll>
 
         {/* Footer Link */}
-        <p className="text-center text-xs text-slate-500 dark:text-slate-400">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Sign in here
-          </Link>
-        </p>
+        <RevealOnScroll direction="up" delay={0.15}>
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Sign in here
+            </Link>
+          </p>
+        </RevealOnScroll>
       </div>
     </div>
   );
