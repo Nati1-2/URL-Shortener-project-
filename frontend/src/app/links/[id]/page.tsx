@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, use } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Link2,
@@ -16,13 +16,12 @@ import {
   ExternalLink,
   ShieldCheck,
   Trash2,
-  Edit,
   ArrowLeft,
-  Activity,
   BarChart3,
   CheckCircle2,
   Download,
   AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
@@ -30,9 +29,11 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
-import { useLinksStore } from "@/store/useLinksStore";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { useLink, useDeleteLink } from "@/hooks/useLinks";
+import { useClickTimeline, useGeographyAnalytics } from "@/hooks/useAnalytics";
 import { useToastStore } from "@/store/useToastStore";
-import { CLICK_TIMELINE_DATA, GEO_LOCATION_DATA, DEVICE_DATA } from "@/mock/linksData";
 import { formatNumber, formatDate, truncateUrl } from "@/lib/utils";
 
 // Recharts components
@@ -45,46 +46,75 @@ import {
   Tooltip,
 } from "recharts";
 
-export default function LinkDetailsPage() {
-  const params = useParams();
+export default function LinkDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: linkId } = use(params);
   const router = useRouter();
-  const linkId = (params?.id as string) || "lnk_101";
-
-  const { getLinkById, deleteLink } = useLinksStore();
   const { addToast } = useToastStore();
 
-  const link = getLinkById(linkId) || getLinkById("lnk_101");
+  const { data: link, isLoading, isError, refetch } = useLink(linkId);
+  const deleteMutation = useDeleteLink();
+  const { data: timelineData, isLoading: isTimelineLoading } = useClickTimeline({ linkId });
+  const { data: geoData } = useGeographyAnalytics({ linkId });
 
   const [copied, setCopied] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  if (!link) {
+  const handleCopy = () => {
+    if (link) {
+      navigator.clipboard.writeText(`https://${link.shortUrl}`);
+      setCopied(true);
+      addToast({ type: "success", title: "Copied URL to clipboard" });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleDelete = () => {
+    if (link) {
+      deleteMutation.mutate(link.id, {
+        onSuccess: () => router.push("/links"),
+      });
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-slate-50 dark:bg-[#090d16]">
+      <div className="flex min-h-screen bg-slate-50 dark:bg-[#080c14]">
         <Sidebar />
-        <div className="flex-1 p-8 text-center">
-          <h2 className="text-xl font-bold">Link Not Found</h2>
+        <div className="flex-1 p-8 space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-44 w-full" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
         </div>
       </div>
     );
   }
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(`https://${link.shortUrl}`);
-    setCopied(true);
-    addToast({ type: "success", title: "Copied URL to clipboard" });
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleDelete = () => {
-    deleteLink(link.id);
-    addToast({ type: "success", title: "Short link deleted" });
-    router.push("/links");
-  };
+  if (isError || !link) {
+    return (
+      <div className="flex min-h-screen bg-slate-50 dark:bg-[#080c14]">
+        <Sidebar />
+        <div className="flex-1 p-8 max-w-xl mx-auto my-auto">
+          <ErrorState
+            title="Link Not Found"
+            message="The requested link could not be loaded from the links microservice."
+            onRetry={() => refetch()}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-[#090d16]">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-[#080c14]">
       <Sidebar />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -121,7 +151,7 @@ export default function LinkDetailsPage() {
             </div>
           </div>
 
-          {/* Top Main Short Link Display Banner */}
+          {/* Top Banner Card */}
           <Card className="p-6 sm:p-8 space-y-6 border-2 border-blue-500/30 bg-gradient-to-r from-blue-600/5 via-indigo-600/5 to-purple-600/5">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="space-y-2">
@@ -131,7 +161,7 @@ export default function LinkDetailsPage() {
                   </Badge>
                   <span className="text-xs text-slate-400">Created on {formatDate(link.createdAt)}</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                   {link.title}
                 </h1>
                 <p className="text-2xl font-mono font-bold text-blue-600 dark:text-blue-400">
@@ -153,55 +183,54 @@ export default function LinkDetailsPage() {
                 </Button>
                 <a href={link.originalUrl} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" size="lg" rightIcon={<ExternalLink className="w-4 h-4" />}>
-                    Visit Link
+                    Visit Destination
                   </Button>
                 </a>
               </div>
             </div>
           </Card>
 
-          {/* 3 Metric Cards for this specific Link */}
+          {/* 3 Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <Card className="space-y-1">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Link Clicks</span>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Clicks</span>
+              <p className="text-3xl font-black text-slate-900 dark:text-white">
                 {formatNumber(link.clicks)}
               </p>
-              <span className="text-xs text-emerald-500 font-semibold">+18.4% velocity</span>
+              <span className="text-xs text-emerald-500 font-bold">+18.4% velocity</span>
             </Card>
 
             <Card className="space-y-1">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Link Health Index</span>
-              <p className="text-3xl font-extrabold text-emerald-500 flex items-center gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Health & SSL</span>
+              <p className="text-3xl font-black text-emerald-500 flex items-center gap-2">
                 <CheckCircle2 className="w-7 h-7" /> 100% OK
               </p>
-              <span className="text-xs text-slate-400">SSL Valid • HTTP 200 Success</span>
+              <span className="text-xs text-slate-400">HTTP 200 • Edge Anycast</span>
             </Card>
 
             <Card className="space-y-1">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Protection Status</span>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Security Rule</span>
+              <p className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                 {link.password ? <Lock className="w-6 h-6 text-purple-500" /> : <ShieldCheck className="w-6 h-6 text-blue-500" />}
                 {link.password ? "Protected" : "Public"}
               </p>
               <span className="text-xs text-slate-400">
-                {link.password ? "Passcode Enabled" : "Open Access"}
+                {link.password ? "Passcode Active" : "Open Routing"}
               </span>
             </Card>
           </div>
 
-          {/* Main Grid: Left Details & QR Studio / Right History Chart */}
+          {/* Details & Dedicated Analytics Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Col: QR Code Card & Configuration */}
+            {/* Left: QR Studio & Metadata */}
             <div className="space-y-6">
-              {/* QR Code Card */}
               <Card className="space-y-4 text-center">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2">
                   <QrCode className="w-5 h-5 text-blue-500" />
-                  <span>Link QR Code Studio</span>
+                  <span>Dynamic QR Code Studio</span>
                 </h3>
 
-                <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-md inline-block">
+                <div className="p-4 bg-white rounded-3xl border border-slate-200 shadow-md inline-block">
                   <QRCodeSVG value={`https://${link.shortUrl}`} size={160} level="H" />
                 </div>
 
@@ -215,10 +244,9 @@ export default function LinkDetailsPage() {
                 </div>
               </Card>
 
-              {/* Link Config Overview */}
               <Card className="space-y-4">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Link Metadata & Config
+                  Metadata & Routing Rules
                 </h3>
                 <div className="space-y-3 text-xs">
                   <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
@@ -231,7 +259,7 @@ export default function LinkDetailsPage() {
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                     <span className="text-slate-400 font-semibold">Tags:</span>
-                    <span className="text-slate-900 dark:text-white">{link.tags.join(", ")}</span>
+                    <span className="text-slate-900 dark:text-white">{link.tags?.join(", ") || "None"}</span>
                   </div>
                   {link.utmSource && (
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
@@ -249,20 +277,20 @@ export default function LinkDetailsPage() {
               </Card>
             </div>
 
-            {/* Right 2 Cols: Dedicated History Chart */}
+            {/* Right: Timeline Chart & Locations */}
             <div className="lg:col-span-2 space-y-6">
               <Card className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <BarChart3 className="w-5 h-5 text-indigo-500" />
-                    <span>Click Performance History</span>
+                    <span>Click Performance Velocity</span>
                   </h3>
-                  <Badge variant="info">Link ID: {link.id}</Badge>
+                  <Badge variant="info">ID: {link.id}</Badge>
                 </div>
 
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={CLICK_TIMELINE_DATA}>
+                    <AreaChart data={timelineData || []}>
                       <defs>
                         <linearGradient id="linkClickGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
@@ -273,9 +301,9 @@ export default function LinkDetailsPage() {
                       <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: "#0f172a",
-                          borderColor: "#334155",
-                          borderRadius: "0.75rem",
+                          backgroundColor: "#0e1526",
+                          borderColor: "#1e293b",
+                          borderRadius: "1rem",
                           color: "#fff",
                           fontSize: "12px",
                         }}
@@ -293,15 +321,15 @@ export default function LinkDetailsPage() {
                 </div>
               </Card>
 
-              {/* Geographic Breakdown for this link */}
+              {/* Geographic Breakdown */}
               <Card className="space-y-4">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Globe className="w-5 h-5 text-blue-500" />
                   <span>Top Locations for this Link</span>
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {GEO_LOCATION_DATA.slice(0, 4).map((geo) => (
-                    <div key={geo.country} className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-between text-xs">
+                  {geoData?.slice(0, 4).map((geo) => (
+                    <div key={geo.country} className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{geo.flag}</span>
                         <span className="font-bold text-slate-900 dark:text-white">{geo.country}</span>
@@ -316,12 +344,12 @@ export default function LinkDetailsPage() {
         </main>
       </div>
 
-      {/* Delete Modal */}
+      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         title="Delete Short Link"
-        description="Are you sure you want to delete this link? This action cannot be undone."
+        description="Are you sure you want to permanently delete this short link? All click data will be erased."
       >
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
           <Button variant="outline" size="sm" onClick={() => setShowDeleteModal(false)}>
@@ -346,24 +374,6 @@ export default function LinkDetailsPage() {
             <Button variant="primary" size="sm" onClick={handleCopy}>
               Copy
             </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <a
-              href={`https://twitter.com/intent/tweet?url=https://${link.shortUrl}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              Share on Twitter / X
-            </a>
-            <a
-              href={`https://www.linkedin.com/sharing/share-offsite/?url=https://${link.shortUrl}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              Share on LinkedIn
-            </a>
           </div>
         </div>
       </Modal>

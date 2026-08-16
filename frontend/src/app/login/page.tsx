@@ -2,23 +2,20 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Link2, Eye, EyeOff, Lock, Mail, ArrowRight, Github } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useLogin } from "@/hooks/useAuth";
 import { useToastStore } from "@/store/useToastStore";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login } = useAuthStore();
+  const loginMutation = useLogin();
   const { addToast } = useToastStore();
 
   const [email, setEmail] = useState("alex.vance@acme.inc");
   const [password, setPassword] = useState("password123");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,52 +25,53 @@ export default function LoginPage() {
       return;
     }
     setErrorMsg("");
-    setIsLoading(true);
 
-    try {
-      await login(email, password);
-      addToast({
-        type: "success",
-        title: "Welcome back!",
-        message: "Successfully logged in to LinkPulse dashboard.",
-      });
-      router.push("/dashboard");
-    } catch (err) {
-      setErrorMsg("Invalid credentials. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    loginMutation.mutate(
+      { email, password, rememberMe },
+      {
+        onSuccess: () => {
+          addToast({
+            type: "success",
+            title: "Welcome back!",
+            message: "Signed in to LinkPulse dashboard.",
+          });
+        },
+        onError: (err: any) => {
+          setErrorMsg(err?.message || "Invalid credentials. Please try again.");
+        },
+      }
+    );
   };
 
   const handleForgotPassword = () => {
     addToast({
       type: "info",
-      title: "Password Reset Sent",
-      message: `A password reset link was sent to ${email}`,
+      title: "Password Reset Link Sent",
+      message: `Instructions were sent to ${email}`,
     });
   };
 
   return (
     <div className="min-h-screen pt-24 pb-16 flex items-center justify-center px-4 relative">
-      {/* Background Lighting */}
+      {/* Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg h-96 bg-blue-600/15 rounded-full blur-[140px] pointer-events-none -z-10" />
 
       <div className="w-full max-w-md space-y-6">
-        {/* Top Header Logo */}
+        {/* Header Logo */}
         <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-brand-gradient flex items-center justify-center text-white shadow-lg">
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-brand-gradient flex items-center justify-center text-white shadow-lg border border-white/20">
               <Link2 className="w-5 h-5 stroke-[2.5]" />
             </div>
-            <span className="font-bold text-2xl text-slate-900 dark:text-white">
+            <span className="font-extrabold text-2xl text-slate-900 dark:text-white tracking-tight">
               Link<span className="text-gradient">Pulse</span>
             </span>
           </Link>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Welcome back to your workspace
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            Sign in to your workspace
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Sign in to manage your short links and view analytics.
+            Access your short link vault and real-time telemetry.
           </p>
         </div>
 
@@ -87,7 +85,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Work Email"
+              label="Work Email Address"
               type="email"
               placeholder="alex@company.com"
               value={email}
@@ -98,7 +96,7 @@ export default function LoginPage() {
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                   Password
                 </label>
                 <button
@@ -146,10 +144,10 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              variant="gradient"
+              variant="glow"
               size="lg"
-              isLoading={isLoading}
-              className="w-full text-base font-semibold"
+              isLoading={loginMutation.isPending}
+              className="w-full text-base font-bold"
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
               Sign In to Dashboard
@@ -159,7 +157,7 @@ export default function LoginPage() {
           {/* Social Sign-in Divider */}
           <div className="relative flex items-center justify-center my-4">
             <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-            <span className="bg-white dark:bg-slate-900 px-3 text-[11px] uppercase font-bold text-slate-400 shrink-0">
+            <span className="bg-white dark:bg-slate-900 px-3 text-[10px] uppercase font-bold text-slate-400 shrink-0">
               Or continue with
             </span>
           </div>
@@ -172,7 +170,7 @@ export default function LoginPage() {
               onClick={() => handleSubmit({ preventDefault: () => {} } as any)}
               className="text-xs"
             >
-              Google
+              Google SSO
             </Button>
             <Button
               type="button"

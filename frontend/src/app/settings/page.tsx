@@ -13,7 +13,9 @@ import {
   Plus,
   Trash2,
   ShieldCheck,
-  Smartphone,
+  Globe,
+  Building2,
+  Users,
   ExternalLink,
   Sparkles,
 } from "lucide-react";
@@ -27,13 +29,27 @@ import { Tabs } from "@/components/ui/Tabs";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useToastStore } from "@/store/useToastStore";
+import { useWorkspaceMembers, useInviteMember } from "@/hooks/useWorkspaces";
+import { useDomains, useAddDomain, useVerifyDomain } from "@/hooks/useDomains";
+import { useSubscription } from "@/hooks/useBilling";
+import { Role } from "@/types";
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
+  const { activeWorkspaceId } = useUIStore();
   const { addToast } = useToastStore();
 
   const [activeTab, setActiveTab] = useState("profile");
+
+  // Multi-tenant Hooks
+  const { data: members } = useWorkspaceMembers(activeWorkspaceId);
+  const inviteMemberMutation = useInviteMember(activeWorkspaceId);
+  const { data: domains } = useDomains(activeWorkspaceId);
+  const addDomainMutation = useAddDomain();
+  const verifyDomainMutation = useVerifyDomain();
+  const { data: subscription } = useSubscription(activeWorkspaceId);
 
   // Profile Form State
   const [name, setName] = useState(user?.name || "Alex Vance");
@@ -47,11 +63,20 @@ export default function SettingsPage() {
 
   // API Keys State
   const [apiKeys, setApiKeys] = useState([
-    { id: "key_1", name: "Production Node.js Backend", token: "sk_live_998249a029310bc94", created: "2026-08-01" },
+    { id: "key_1", name: "Production Node.js Microservices", token: "sk_live_998249a029310bc94", created: "2026-08-01" },
     { id: "key_2", name: "Staging Testing Environment", token: "sk_test_8492049a029310bc0", created: "2026-08-05" },
   ]);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
+
+  // Domain Modal
+  const [showNewDomainModal, setShowNewDomainModal] = useState(false);
+  const [newHostname, setNewHostname] = useState("");
+
+  // Invite Modal
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<Role>("MEMBER");
 
   // Notifications State
   const [emailDigest, setEmailDigest] = useState(true);
@@ -74,7 +99,10 @@ export default function SettingsPage() {
   const handleCreateApiKey = () => {
     if (!newKeyName) return;
     const newToken = `sk_live_${Math.random().toString(36).substring(2, 18)}`;
-    setApiKeys([...apiKeys, { id: `key_${Date.now()}`, name: newKeyName, token: newToken, created: new Date().toISOString().split("T")[0] }]);
+    setApiKeys([
+      ...apiKeys,
+      { id: `key_${Date.now()}`, name: newKeyName, token: newToken, created: new Date().toISOString().split("T")[0] },
+    ]);
     addToast({ type: "success", title: "API Key Created!", message: newToken });
     setNewKeyName("");
     setShowNewKeyModal(false);
@@ -85,8 +113,24 @@ export default function SettingsPage() {
     addToast({ type: "success", title: "API Key Revoked" });
   };
 
+  const handleAddDomain = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newHostname) return;
+    addDomainMutation.mutate({ hostname: newHostname, workspaceId: activeWorkspaceId });
+    setNewHostname("");
+    setShowNewDomainModal(false);
+  };
+
+  const handleInviteMember = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    inviteMemberMutation.mutate({ email: inviteEmail, role: inviteRole });
+    setInviteEmail("");
+    setShowInviteModal(false);
+  };
+
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-[#090d16]">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-[#080c14]">
       <Sidebar />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -95,11 +139,11 @@ export default function SettingsPage() {
         <main className="p-6 sm:p-8 space-y-8 max-w-6xl mx-auto w-full">
           {/* Header Title */}
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Account & Workspace Settings
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              Workspace & Account Settings
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Manage personal profile, API tokens, security, notifications, and subscription billing.
+              Manage personal profile, API tokens, workspace members, custom domains, and subscription billing.
             </p>
           </div>
 
@@ -107,6 +151,8 @@ export default function SettingsPage() {
           <Tabs
             tabs={[
               { id: "profile", label: "Profile", icon: <User className="w-4 h-4" /> },
+              { id: "team", label: "Team & Members", icon: <Users className="w-4 h-4" /> },
+              { id: "domains", label: "Custom Domains", icon: <Globe className="w-4 h-4" /> },
               { id: "security", label: "Security & 2FA", icon: <Lock className="w-4 h-4" /> },
               { id: "apikeys", label: "API Keys", icon: <Key className="w-4 h-4" /> },
               { id: "notifications", label: "Notifications", icon: <Bell className="w-4 h-4" /> },
@@ -132,7 +178,7 @@ export default function SettingsPage() {
                   />
                   <div className="space-y-1">
                     <Button variant="outline" size="sm">
-                      Upload New Avatar
+                      Upload Avatar
                     </Button>
                     <p className="text-[11px] text-slate-400">JPG, PNG or GIF up to 5MB.</p>
                   </div>
@@ -152,24 +198,131 @@ export default function SettingsPage() {
                   required
                 />
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                     Short Bio
                   </label>
                   <textarea
                     rows={3}
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    className="w-full p-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none"
+                    className="w-full p-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                   />
                 </div>
-                <Button type="submit" variant="gradient" size="md">
+                <Button type="submit" variant="glow" size="md">
                   Save Changes
                 </Button>
               </form>
             </Card>
           )}
 
-          {/* Tab 2: Security & 2FA */}
+          {/* Tab 2: Team & Workspace Members */}
+          {activeTab === "team" && (
+            <Card className="space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    Workspace Members & Roles
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Invite collaborators and control access permissions.
+                  </p>
+                </div>
+                <Button
+                  variant="glow"
+                  size="sm"
+                  onClick={() => setShowInviteModal(true)}
+                  leftIcon={<Plus className="w-4 h-4" />}
+                >
+                  Invite Member
+                </Button>
+              </div>
+
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                {members?.map((mem) => (
+                  <div key={mem.id} className="py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={mem.user.avatar}
+                        alt={mem.user.name}
+                        className="w-9 h-9 rounded-xl object-cover ring-1 ring-blue-500/20"
+                      />
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white">{mem.user.name}</p>
+                        <p className="text-[11px] text-slate-400">{mem.user.email}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="px-2.5 py-1 text-[10px] font-extrabold uppercase rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                        {mem.role}
+                      </span>
+                      <span className="text-[11px] text-slate-400 hidden sm:inline">
+                        Joined {new Date(mem.joinedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Tab 3: Custom Domains */}
+          {activeTab === "domains" && (
+            <Card className="space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    Branded Custom Domains
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Connect your own domain with automatic SSL edge provisioning.
+                  </p>
+                </div>
+                <Button
+                  variant="glow"
+                  size="sm"
+                  onClick={() => setShowNewDomainModal(true)}
+                  leftIcon={<Plus className="w-4 h-4" />}
+                >
+                  Add Custom Domain
+                </Button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                {domains?.map((dom) => (
+                  <div
+                    key={dom.id}
+                    className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-slate-200/50 dark:border-slate-800/50"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-slate-900 dark:text-white font-mono text-sm">{dom.hostname}</p>
+                        {dom.isDefault && <Badge variant="info">Default</Badge>}
+                      </div>
+                      <p className="text-[11px] text-slate-400">CNAME target: cname.linkpulse.io</p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Badge variant={dom.status === "verified" ? "success" : "warning"}>
+                        {dom.status === "verified" ? "SSL Active" : "DNS Pending"}
+                      </Badge>
+                      {dom.status !== "verified" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => verifyDomainMutation.mutate(dom.id)}
+                        >
+                          Verify DNS
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Tab 4: Security & 2FA */}
           {activeTab === "security" && (
             <div className="space-y-6">
               <Card className="space-y-6">
@@ -189,7 +342,7 @@ export default function SettingsPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
-                  <Button type="submit" variant="gradient" size="md">
+                  <Button type="submit" variant="glow" size="md">
                     Update Password
                   </Button>
                 </form>
@@ -209,7 +362,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Tab 3: API Keys */}
+          {/* Tab 5: API Keys */}
           {activeTab === "apikeys" && (
             <Card className="space-y-6">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -222,12 +375,12 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <Button
-                  variant="gradient"
+                  variant="glow"
                   size="sm"
                   onClick={() => setShowNewKeyModal(true)}
                   leftIcon={<Plus className="w-4 h-4" />}
                 >
-                  Generate New Secret Token
+                  Generate Secret Token
                 </Button>
               </div>
 
@@ -235,7 +388,7 @@ export default function SettingsPage() {
                 {apiKeys.map((key) => (
                   <div
                     key={key.id}
-                    className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-slate-200/50 dark:border-slate-800/50"
+                    className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-slate-200/50 dark:border-slate-800/50"
                   >
                     <div className="space-y-1">
                       <p className="font-bold text-slate-900 dark:text-white">{key.name}</p>
@@ -256,7 +409,7 @@ export default function SettingsPage() {
             </Card>
           )}
 
-          {/* Tab 4: Notifications */}
+          {/* Tab 6: Notifications */}
           {activeTab === "notifications" && (
             <Card className="space-y-6">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -266,14 +419,14 @@ export default function SettingsPage() {
                 <Switch
                   checked={emailDigest}
                   onChange={setEmailDigest}
-                  label="Weekly Click Analytics Email Digest"
+                  label="Weekly Click Telemetry Digest"
                   description="Receive a summary of click performance every Monday."
                 />
                 <Switch
                   checked={expiryAlerts}
                   onChange={setExpiryAlerts}
                   label="Link Expiration Warning Alerts"
-                  description="Get notified when a link is about to expire."
+                  description="Get notified when a link is approaching its expiration date."
                 />
                 <Switch
                   checked={trafficSurgeAlerts}
@@ -285,19 +438,19 @@ export default function SettingsPage() {
             </Card>
           )}
 
-          {/* Tab 5: Billing & Subscription */}
+          {/* Tab 7: Billing & Subscription */}
           {activeTab === "billing" && (
             <div className="space-y-6">
               <Card className="space-y-4 border-2 border-blue-500/30 bg-blue-500/5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
-                    <Badge variant="purple">Pro Plan Active</Badge>
-                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">$19 / Month</h3>
+                    <Badge variant="purple">{subscription?.planName || "Pro Growth Plan Active"}</Badge>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">$19 / Month</h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       Your subscription renews automatically on Sept 14, 2026.
                     </p>
                   </div>
-                  <Button variant="gradient" size="md">
+                  <Button variant="glow" size="md">
                     Upgrade to Enterprise
                   </Button>
                 </div>
@@ -305,7 +458,9 @@ export default function SettingsPage() {
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2 text-xs">
                   <div className="flex justify-between font-semibold">
                     <span>Monthly Click Limit Usage</span>
-                    <span className="text-blue-500">14,230 / 50,000 Clicks (28%)</span>
+                    <span className="text-blue-500">
+                      {subscription?.usedClicksCurrentPeriod.toLocaleString() || "14,230"} / {subscription?.monthlyClicksLimit.toLocaleString() || "50,000"} Clicks (28%)
+                    </span>
                   </div>
                   <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                     <div className="h-full bg-brand-gradient rounded-full w-[28%]" />
@@ -313,10 +468,9 @@ export default function SettingsPage() {
                 </div>
               </Card>
 
-              {/* Past Invoices */}
               <Card className="space-y-4">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  Payment History & Invoices
+                  Payment Invoices History
                 </h3>
                 <div className="space-y-2 text-xs">
                   {[
@@ -325,7 +479,7 @@ export default function SettingsPage() {
                   ].map((inv) => (
                     <div
                       key={inv.id}
-                      className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-between"
+                      className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-between"
                     >
                       <div className="space-y-0.5">
                         <p className="font-bold text-slate-900 dark:text-white">Pro Plan Subscription</p>
@@ -342,14 +496,14 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Tab 6: Danger Zone */}
+          {/* Tab 8: Danger Zone */}
           {activeTab === "danger" && (
             <Card className="space-y-4 border-2 border-red-500/30 bg-red-500/5">
               <h3 className="text-lg font-bold text-red-600 dark:text-red-400">
                 Danger Zone
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
-                Permanently delete your account, wipe all shortened link routing rules, and destroy analytics history.
+                Permanently delete this workspace, wipe all shortened link routing rules, and destroy click analytics telemetry.
               </p>
               <Button
                 variant="danger"
@@ -357,7 +511,7 @@ export default function SettingsPage() {
                 onClick={() => setShowDeleteAccountModal(true)}
                 leftIcon={<Trash2 className="w-4 h-4" />}
               >
-                Delete LinkPulse Account
+                Delete Workspace
               </Button>
             </Card>
           )}
@@ -381,19 +535,85 @@ export default function SettingsPage() {
             <Button variant="outline" size="sm" onClick={() => setShowNewKeyModal(false)}>
               Cancel
             </Button>
-            <Button variant="gradient" size="sm" onClick={handleCreateApiKey}>
+            <Button variant="glow" size="sm" onClick={handleCreateApiKey}>
               Generate Key
             </Button>
           </div>
         </div>
       </Modal>
 
+      {/* New Domain Modal */}
+      <Modal
+        isOpen={showNewDomainModal}
+        onClose={() => setShowNewDomainModal(false)}
+        title="Add Branded Custom Domain"
+        description="Enter your custom root or subdomain (e.g. go.yourbrand.com)."
+      >
+        <form onSubmit={handleAddDomain} className="space-y-4 py-2">
+          <Input
+            label="Domain Hostname"
+            placeholder="e.g. go.brand.com"
+            value={newHostname}
+            onChange={(e) => setNewHostname(e.target.value)}
+            required
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setShowNewDomainModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="glow" size="sm">
+              Add Domain
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Invite Member Modal */}
+      <Modal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        title="Invite Team Member"
+      >
+        <form onSubmit={handleInviteMember} className="space-y-4 py-2">
+          <Input
+            label="Collaborator Email Address"
+            type="email"
+            placeholder="colleague@company.com"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            required
+          />
+          <div className="space-y-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+              Role Permission
+            </label>
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value as Role)}
+              className="w-full h-10 px-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl"
+            >
+              <option value="ADMIN">ADMIN (Full management)</option>
+              <option value="MEMBER">MEMBER (Create & edit links)</option>
+              <option value="VIEWER">VIEWER (View-only analytics)</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setShowInviteModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="glow" size="sm">
+              Send Invite
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
       {/* Delete Account Modal */}
       <Modal
         isOpen={showDeleteAccountModal}
         onClose={() => setShowDeleteAccountModal(false)}
-        title="Confirm Account Deletion"
-        description="This action will permanently delete all your short URLs and analytics data."
+        title="Confirm Workspace Deletion"
+        description="This action will permanently delete all links and analytics."
       >
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
           <Button variant="outline" size="sm" onClick={() => setShowDeleteAccountModal(false)}>
@@ -403,7 +623,7 @@ export default function SettingsPage() {
             variant="danger"
             size="sm"
             onClick={() => {
-              addToast({ type: "error", title: "Account deletion requested" });
+              addToast({ type: "error", title: "Workspace deletion requested" });
               setShowDeleteAccountModal(false);
             }}
           >

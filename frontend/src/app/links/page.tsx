@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -12,14 +12,12 @@ import {
   ExternalLink,
   Trash2,
   Lock,
-  Calendar,
   Grid,
   List,
   Plus,
-  AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
@@ -27,50 +25,47 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
-import { useLinksStore } from "@/store/useLinksStore";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { useLinks, useDeleteLink, useBulkDeleteLinks } from "@/hooks/useLinks";
 import { useToastStore } from "@/store/useToastStore";
 import { formatNumber, formatDate, truncateUrl } from "@/lib/utils";
 
 export default function LinksPage() {
-  const { links, searchQuery, setSearchQuery, statusFilter, setStatusFilter, sortBy, setSortBy, deleteLink, bulkDeleteLinks } =
-    useLinksStore();
   const { addToast } = useToastStore();
 
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [sortBy, setSortBy] = useState<"createdAt" | "clicks" | "title">("createdAt");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
 
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  // TanStack Query Hooks
+  const { data, isLoading, isError, refetch } = useLinks({
+    page,
+    limit: 10,
+    search,
+    status,
+    sortBy,
+    sortOrder: "desc",
+  });
 
-  // Filter & Search Logic
-  const filteredLinks = useMemo(() => {
-    return links
-      .filter((link) => {
-        const matchesQuery =
-          link.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          link.shortUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          link.originalUrl.toLowerCase().includes(searchQuery.toLowerCase());
+  const deleteLinkMutation = useDeleteLink();
+  const bulkDeleteMutation = useBulkDeleteLinks();
 
-        const matchesStatus =
-          statusFilter === "all" ? true : link.status === statusFilter;
-
-        return matchesQuery && matchesStatus;
-      })
-      .sort((a, b) => {
-        if (sortBy === "clicks") return b.clicks - a.clicks;
-        if (sortBy === "title") return a.title.localeCompare(b.title);
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
-  }, [links, searchQuery, statusFilter, sortBy]);
-
-  const totalPages = Math.ceil(filteredLinks.length / pageSize) || 1;
-  const paginatedLinks = filteredLinks.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const links = data?.data || [];
+  const pagination = data?.pagination || {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+    hasNext: false,
+    hasPrev: false,
+  };
 
   const handleCopy = (shortUrl: string, id: string) => {
     navigator.clipboard.writeText(`https://${shortUrl}`);
@@ -81,7 +76,7 @@ export default function LinksPage() {
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(filteredLinks.map((l) => l.id));
+      setSelectedIds(links.map((l) => l.id));
     } else {
       setSelectedIds([]);
     }
@@ -97,22 +92,20 @@ export default function LinksPage() {
 
   const handleConfirmDelete = () => {
     if (deleteModalId) {
-      deleteLink(deleteModalId);
-      addToast({ type: "success", title: "Short link deleted" });
+      deleteLinkMutation.mutate(deleteModalId);
       setDeleteModalId(null);
     }
   };
 
   const handleBulkDelete = () => {
     if (selectedIds.length > 0) {
-      bulkDeleteLinks(selectedIds);
-      addToast({ type: "success", title: `Deleted ${selectedIds.length} links` });
+      bulkDeleteMutation.mutate(selectedIds);
       setSelectedIds([]);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-[#090d16]">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-[#080c14]">
       <Sidebar />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -122,8 +115,8 @@ export default function LinksPage() {
           {/* Header Title */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Links Library Management
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                Links Library Vault
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
                 Filter, search, organize, and manage your entire short link inventory.
@@ -131,13 +124,13 @@ export default function LinksPage() {
             </div>
 
             <Link href="/create">
-              <Button variant="gradient" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+              <Button variant="glow" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
                 Create Short Link
               </Button>
             </Link>
           </div>
 
-          {/* Search, Filter & Bulk Toolbar */}
+          {/* Search, Filter & Bulk Toolbar Card */}
           <Card className="space-y-4 p-4">
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
               {/* Search Bar */}
@@ -146,8 +139,11 @@ export default function LinksPage() {
                 <input
                   type="text"
                   placeholder="Search by title, code, or destination URL..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
                   className="w-full h-10 pl-10 pr-4 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                 />
               </div>
@@ -158,8 +154,11 @@ export default function LinksPage() {
                 <div className="flex items-center gap-1.5 text-xs">
                   <Filter className="w-3.5 h-3.5 text-slate-400" />
                   <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    value={status}
+                    onChange={(e) => {
+                      setStatus(e.target.value);
+                      setPage(1);
+                    }}
                     className="h-9 px-2.5 text-xs font-semibold bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-xl focus:outline-none"
                   >
                     <option value="all">All Statuses</option>
@@ -169,12 +168,15 @@ export default function LinksPage() {
                   </select>
                 </div>
 
-                {/* Sort dropdown */}
+                {/* Sort Dropdown */}
                 <div className="flex items-center gap-1.5 text-xs">
                   <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
+                    onChange={(e) => {
+                      setSortBy(e.target.value as any);
+                      setPage(1);
+                    }}
                     className="h-9 px-2.5 text-xs font-semibold bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-xl focus:outline-none"
                   >
                     <option value="createdAt">Newest First</option>
@@ -209,51 +211,52 @@ export default function LinksPage() {
               </div>
             </div>
 
-            {/* Bulk Action Bar if items selected */}
+            {/* Bulk Action Bar */}
             {selectedIds.length > 0 && (
               <div className="flex items-center justify-between p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 animate-fadeIn">
                 <span>{selectedIds.length} link(s) selected</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={handleBulkDelete}
-                    leftIcon={<Trash2 className="w-3.5 h-3.5" />}
-                  >
-                    Bulk Delete Selected
-                  </Button>
-                </div>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+                >
+                  Bulk Delete Selected
+                </Button>
               </div>
             )}
           </Card>
 
           {/* Links Data Display */}
-          {filteredLinks.length === 0 ? (
-            <Card className="py-16 text-center space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mx-auto">
-                <Search className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                No matching short links found
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                Try clearing your search filters or create a new short URL.
-              </p>
+          {isLoading ? (
+            <Card className="space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
             </Card>
+          ) : isError ? (
+            <ErrorState
+              title="Failed to fetch links library"
+              message="Link microservice error. Please retry."
+              onRetry={() => refetch()}
+            />
+          ) : links.length === 0 ? (
+            <EmptyState
+              title="No short links found"
+              description="No links matched your search filter criteria."
+              actionText="Create New Short Link"
+              actionHref="/create"
+            />
           ) : viewMode === "table" ? (
-            /* Table View */
             <Card className="p-0 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
                       <th className="py-3.5 px-4 w-10">
                         <input
                           type="checkbox"
-                          checked={
-                            selectedIds.length === filteredLinks.length &&
-                            filteredLinks.length > 0
-                          }
+                          checked={selectedIds.length === links.length && links.length > 0}
                           onChange={handleSelectAll}
                           className="rounded border-slate-300 text-blue-600"
                         />
@@ -267,7 +270,7 @@ export default function LinksPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
-                    {paginatedLinks.map((link) => {
+                    {links.map((link) => {
                       const isSelected = selectedIds.includes(link.id);
                       return (
                         <tr
@@ -357,9 +360,8 @@ export default function LinksPage() {
               </div>
             </Card>
           ) : (
-            /* Grid View */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedLinks.map((link) => (
+              {links.map((link) => (
                 <Card key={link.id} hoverEffect className="space-y-4 flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
@@ -396,9 +398,7 @@ export default function LinksPage() {
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400">
-                      {formatDate(link.createdAt)}
-                    </span>
+                    <span className="text-[11px] text-slate-400">{formatDate(link.createdAt)}</span>
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
@@ -423,29 +423,29 @@ export default function LinksPage() {
             </div>
           )}
 
-          {/* Pagination Controls */}
+          {/* Server-Side Pagination Bar */}
           <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
             <span>
-              Showing {paginatedLinks.length} of {filteredLinks.length} total links
+              Showing {links.length} of {pagination.total} total links
             </span>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={!pagination.hasPrev}
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
                 leftIcon={<ChevronLeft className="w-3.5 h-3.5" />}
               >
                 Previous
               </Button>
               <span className="font-semibold text-slate-900 dark:text-slate-100">
-                Page {currentPage} of {totalPages}
+                Page {pagination.page} of {pagination.totalPages}
               </span>
               <Button
                 variant="outline"
                 size="sm"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={!pagination.hasNext}
+                onClick={() => setPage((p) => p + 1)}
                 rightIcon={<ChevronRight className="w-3.5 h-3.5" />}
               >
                 Next
@@ -460,7 +460,7 @@ export default function LinksPage() {
         isOpen={!!deleteModalId}
         onClose={() => setDeleteModalId(null)}
         title="Confirm Delete Link"
-        description="Are you sure you want to delete this short link? All click data will be permanently removed."
+        description="Are you sure you want to delete this short link? All routing and click data will be permanently removed."
       >
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
           <Button variant="outline" size="sm" onClick={() => setDeleteModalId(null)}>

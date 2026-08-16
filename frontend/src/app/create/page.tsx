@@ -27,16 +27,19 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Switch } from "@/components/ui/Switch";
-import { useLinksStore } from "@/store/useLinksStore";
+import { useCreateLink } from "@/hooks/useLinks";
+import { useDomains } from "@/hooks/useDomains";
 import { useToastStore } from "@/store/useToastStore";
 import { DOMAINS } from "@/lib/constants";
+import { Link as LinkType } from "@/types";
 
 export default function CreateUrlPage() {
   const router = useRouter();
-  const { addLink } = useLinksStore();
+  const createMutation = useCreateLink();
+  const { data: customDomains } = useDomains();
   const { addToast } = useToastStore();
 
-  // Core Link State
+  // Form State
   const [title, setTitle] = useState("");
   const [originalUrl, setOriginalUrl] = useState("");
   const [domain, setDomain] = useState("ly.nk");
@@ -52,13 +55,12 @@ export default function CreateUrlPage() {
   const [utmMedium, setUtmMedium] = useState("");
   const [utmCampaign, setUtmCampaign] = useState("");
 
-  // QR Studio Customization State
+  // QR Studio Customization
   const [qrFgColor, setQrFgColor] = useState("#0f172a");
   const [qrBgColor, setQrBgColor] = useState("#ffffff");
 
-  // Flow State
-  const [isCreating, setIsCreating] = useState(false);
-  const [createdLink, setCreatedLink] = useState<{ id: string; shortUrl: string } | null>(null);
+  // Created State
+  const [createdLink, setCreatedLink] = useState<LinkType | null>(null);
   const [copied, setCopied] = useState(false);
 
   const handlePaste = async () => {
@@ -68,8 +70,8 @@ export default function CreateUrlPage() {
         setOriginalUrl(text);
         addToast({ type: "info", title: "Pasted from clipboard" });
       }
-    } catch (e) {
-      // Clipboard fallback
+    } catch {
+      // ignore clipboard error
     }
   };
 
@@ -79,19 +81,18 @@ export default function CreateUrlPage() {
       addToast({ type: "warning", title: "Please enter a destination URL" });
       return;
     }
-    setIsCreating(true);
 
-    setTimeout(() => {
-      let finalTitle = title.trim();
-      if (!finalTitle) {
-        try {
-          finalTitle = new URL(originalUrl).hostname;
-        } catch {
-          finalTitle = "Shortened Link";
-        }
+    let finalTitle = title.trim();
+    if (!finalTitle) {
+      try {
+        finalTitle = new URL(originalUrl).hostname;
+      } catch {
+        finalTitle = "Shortened Link";
       }
+    }
 
-      const newLinkObj = addLink({
+    createMutation.mutate(
+      {
         title: finalTitle,
         originalUrl,
         shortCode: customSlug.trim() || undefined,
@@ -103,24 +104,22 @@ export default function CreateUrlPage() {
         utmSource,
         utmMedium,
         utmCampaign,
-      });
-
-      setIsCreating(false);
-      setCreatedLink({ id: newLinkObj.id, shortUrl: newLinkObj.shortUrl });
-
-      // Trigger Confetti Celebration
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-
-      addToast({
-        type: "success",
-        title: "Short Link Created Successfully!",
-        message: `https://${newLinkObj.shortUrl}`,
-      });
-    }, 800);
+        qrSettings: {
+          fgColor: qrFgColor,
+          bgColor: qrBgColor,
+        },
+      },
+      {
+        onSuccess: (newLink) => {
+          setCreatedLink(newLink);
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 },
+          });
+        },
+      }
+    );
   };
 
   const handleCopy = () => {
@@ -132,8 +131,13 @@ export default function CreateUrlPage() {
     }
   };
 
+  const domainOptions = [
+    ...DOMAINS,
+    ...(customDomains?.filter((d) => d.status === "verified").map((d) => ({ value: d.hostname, label: d.hostname })) || []),
+  ];
+
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-[#090d16]">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-[#080c14]">
       <Sidebar />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -142,7 +146,7 @@ export default function CreateUrlPage() {
         <main className="p-6 sm:p-8 max-w-5xl mx-auto w-full space-y-8">
           {/* Header Title */}
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               Create New Short URL
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -163,7 +167,7 @@ export default function CreateUrlPage() {
                   </h3>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                       Destination URL *
                     </label>
                     <div className="flex gap-2">
@@ -200,15 +204,15 @@ export default function CreateUrlPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                         Domain
                       </label>
                       <select
                         value={domain}
                         onChange={(e) => setDomain(e.target.value)}
-                        className="w-full h-11 px-3.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-800 focus:outline-none"
+                        className="w-full h-11 px-3.5 text-xs font-semibold bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                       >
-                        {DOMAINS.map((d) => (
+                        {domainOptions.map((d) => (
                           <option key={d.value} value={d.value}>
                             {d.label}
                           </option>
@@ -237,7 +241,7 @@ export default function CreateUrlPage() {
                   />
                 </Card>
 
-                {/* Advanced Security & Expiration Accordion / Rules */}
+                {/* Advanced Security & Targeting Rules */}
                 <Card className="space-y-5">
                   <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <Sliders className="w-5 h-5 text-purple-500" />
@@ -250,7 +254,7 @@ export default function CreateUrlPage() {
                       checked={isPasswordProtected}
                       onChange={setIsPasswordProtected}
                       label="Password Protection"
-                      description="Require users to enter a passcode before redirecting."
+                      description="Require visitors to enter a passcode before redirecting."
                     />
                     {isPasswordProtected && (
                       <Input
@@ -306,12 +310,12 @@ export default function CreateUrlPage() {
                   </div>
                 </Card>
 
-                {/* Submit Action */}
+                {/* Submit Button */}
                 <Button
                   type="submit"
-                  variant="gradient"
+                  variant="glow"
                   size="xl"
-                  isLoading={isCreating}
+                  isLoading={createMutation.isPending}
                   className="w-full font-bold text-lg shadow-xl"
                   rightIcon={<Sparkles className="w-5 h-5" />}
                 >
@@ -329,7 +333,7 @@ export default function CreateUrlPage() {
                   <span>Dynamic QR Code Preview</span>
                 </h3>
 
-                <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-md inline-block">
+                <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-md inline-block">
                   <QRCodeSVG
                     value={`https://${domain}/${customSlug || "preview-slug"}`}
                     size={160}
@@ -365,10 +369,10 @@ export default function CreateUrlPage() {
               {createdLink && (
                 <Card className="space-y-4 border-2 border-blue-500/40 bg-blue-500/5 animate-fadeIn">
                   <div className="space-y-1">
-                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                       Link Active & Live
                     </span>
-                    <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                    <h4 className="text-xl font-bold text-slate-900 dark:text-white font-mono">
                       https://{createdLink.shortUrl}
                     </h4>
                   </div>
@@ -384,7 +388,7 @@ export default function CreateUrlPage() {
                       {copied ? "Copied!" : "Copy Short Link"}
                     </Button>
                     <Link href={`/links/${createdLink.id}`}>
-                      <Button variant="gradient" size="sm">
+                      <Button variant="glow" size="sm">
                         View Details
                       </Button>
                     </Link>

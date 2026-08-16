@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -15,16 +15,20 @@ import {
   ChevronRight,
   ExternalLink,
   Sparkles,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useUIStore } from "@/store/useUIStore";
+import { useSubscription } from "@/hooks/useBilling";
 import { APP_NAME } from "@/lib/constants";
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const [collapsed, setCollapsed] = useState(false);
+  const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const { data: subscription } = useSubscription();
 
   const mainNav = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -35,7 +39,7 @@ export const Sidebar: React.FC = () => {
 
   const secondaryNav = [
     { name: "Pricing & Plans", href: "/pricing", icon: CreditCard },
-    { name: "Account Settings", href: "/settings", icon: Settings },
+    { name: "Workspace Settings", href: "/settings", icon: Settings },
   ];
 
   const handleLogout = () => {
@@ -43,19 +47,23 @@ export const Sidebar: React.FC = () => {
     router.push("/login");
   };
 
+  const usedClicks = subscription?.usedClicksCurrentPeriod || 14230;
+  const limitClicks = subscription?.monthlyClicksLimit || 50000;
+  const usagePercentage = Math.min(Math.round((usedClicks / limitClicks) * 100), 100);
+
   return (
     <aside
       className={cn(
-        "relative flex flex-col h-screen sticky top-0 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800/80 transition-all duration-300 z-30 shrink-0 select-none",
-        collapsed ? "w-20" : "w-64"
+        "relative flex flex-col h-screen sticky top-0 bg-white dark:bg-[#080c14] border-r border-slate-200 dark:border-slate-800/80 transition-all duration-300 z-40 shrink-0 select-none",
+        sidebarCollapsed ? "w-20" : "w-64"
       )}
     >
       {/* Collapse Toggle Button */}
       <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-7 w-6 h-6 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white shadow-md z-40"
+        onClick={toggleSidebar}
+        className="absolute -right-3 top-7 w-6 h-6 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white shadow-md z-50"
       >
-        {collapsed ? (
+        {sidebarCollapsed ? (
           <ChevronRight className="w-3.5 h-3.5" />
         ) : (
           <ChevronLeft className="w-3.5 h-3.5" />
@@ -65,16 +73,16 @@ export const Sidebar: React.FC = () => {
       {/* Sidebar Header Brand */}
       <div className="h-16 px-5 flex items-center gap-3 border-b border-slate-100 dark:border-slate-900">
         <Link href="/" className="flex items-center gap-3 overflow-hidden">
-          <div className="w-9 h-9 rounded-xl bg-brand-gradient flex items-center justify-center text-white shadow-md shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-brand-gradient flex items-center justify-center text-white shadow-md shrink-0 border border-white/20">
             <Link2 className="w-5 h-5 stroke-[2.5]" />
           </div>
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight leading-tight">
+              <span className="font-extrabold text-lg text-slate-900 dark:text-white tracking-tight leading-tight">
                 {APP_NAME}
               </span>
               <span className="text-[10px] uppercase font-bold tracking-widest text-blue-600 dark:text-blue-400">
-                SaaS Enterprise
+                Enterprise SaaS
               </span>
             </div>
           )}
@@ -85,7 +93,7 @@ export const Sidebar: React.FC = () => {
       <div className="flex-1 px-3 py-6 space-y-6 overflow-y-auto">
         {/* Main Section */}
         <div>
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
               Main Menu
             </p>
@@ -99,22 +107,22 @@ export const Sidebar: React.FC = () => {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group relative",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group relative",
                     isActive
-                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold"
+                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900"
                   )}
-                  title={collapsed ? item.name : undefined}
+                  title={sidebarCollapsed ? item.name : undefined}
                 >
                   <Icon
                     className={cn(
-                      "w-5 h-5 shrink-0 transition-transform group-hover:scale-110",
+                      "w-4 h-4 shrink-0 transition-transform group-hover:scale-110",
                       isActive
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200"
                     )}
                   />
-                  {!collapsed && <span className="truncate">{item.name}</span>}
+                  {!sidebarCollapsed && <span className="truncate">{item.name}</span>}
                   {isActive && (
                     <div className="absolute right-0 top-2 bottom-2 w-1 bg-blue-600 dark:bg-blue-400 rounded-l-full" />
                   )}
@@ -126,9 +134,9 @@ export const Sidebar: React.FC = () => {
 
         {/* System & Account */}
         <div>
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
-              Account & System
+              Management
             </p>
           )}
           <nav className="space-y-1">
@@ -140,22 +148,22 @@ export const Sidebar: React.FC = () => {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group relative",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group relative",
                     isActive
-                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold"
+                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900"
                   )}
-                  title={collapsed ? item.name : undefined}
+                  title={sidebarCollapsed ? item.name : undefined}
                 >
                   <Icon
                     className={cn(
-                      "w-5 h-5 shrink-0 transition-transform group-hover:scale-110",
+                      "w-4 h-4 shrink-0 transition-transform group-hover:scale-110",
                       isActive
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200"
                     )}
                   />
-                  {!collapsed && <span className="truncate">{item.name}</span>}
+                  {!sidebarCollapsed && <span className="truncate">{item.name}</span>}
                 </Link>
               );
             })}
@@ -163,23 +171,26 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Upgrade Pro Card (if not collapsed) */}
-        {!collapsed && (
+        {!sidebarCollapsed && (
           <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-purple-600/10 border border-blue-500/20 text-slate-800 dark:text-slate-200 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
               <Sparkles className="w-4 h-4" />
-              <span>Pro Growth Plan</span>
+              <span>{subscription?.planName || "Pro Growth Plan"}</span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              14,230 / 50,000 monthly clicks used.
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              {usedClicks.toLocaleString()} / {limitClicks.toLocaleString()} monthly clicks used.
             </p>
             <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-600 rounded-full w-[28%]" />
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all"
+                style={{ width: `${usagePercentage}%` }}
+              />
             </div>
             <Link
               href="/pricing"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-1"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-1"
             >
-              <span>Manage Billing</span>
+              <span>Manage Limits</span>
               <ExternalLink className="w-3 h-3" />
             </Link>
           </div>
@@ -191,7 +202,7 @@ export const Sidebar: React.FC = () => {
         <div
           className={cn(
             "flex items-center gap-3 p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-800/50",
-            collapsed && "justify-center p-1.5"
+            sidebarCollapsed && "justify-center p-1.5"
           )}
         >
           <img
@@ -199,15 +210,17 @@ export const Sidebar: React.FC = () => {
             alt={user?.name}
             className="w-8 h-8 rounded-lg object-cover ring-2 ring-blue-500/20 shrink-0"
           />
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
                 {user?.name}
               </p>
-              <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-blue-500 font-bold uppercase">{user?.role || "OWNER"}</span>
+              </div>
             </div>
           )}
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <button
               onClick={handleLogout}
               className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"

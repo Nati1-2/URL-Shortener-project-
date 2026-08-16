@@ -6,11 +6,13 @@ import { Check, Sparkles, HelpCircle, ArrowRight, ShieldCheck, Zap } from "lucid
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { PRICING_PLANS, FAQS } from "@/lib/constants";
 import { FaqSection } from "@/components/landing/FaqSection";
+import { usePricingPlans, useCheckout } from "@/hooks/useBilling";
 
 export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(true);
+  const { data: plans, isLoading } = usePricingPlans();
+  const checkoutMutation = useCheckout();
 
   const comparisonFeatures = [
     { name: "Monthly Tracked Clicks", free: "1,000", pro: "100,000", enterprise: "Unlimited" },
@@ -25,6 +27,11 @@ export default function PricingPage() {
     { name: "Uptime SLA Guarantee", free: "Standard", pro: "99.9%", enterprise: "99.99% Enterprise SLA" },
   ];
 
+  const handleSelectPlan = (planId: string) => {
+    if (planId === "free") return;
+    checkoutMutation.mutate({ planId, isYearly });
+  };
+
   return (
     <div className="min-h-screen pt-28 pb-20 relative">
       {/* Background Ambient Glow */}
@@ -36,7 +43,7 @@ export default function PricingPage() {
         {/* Header Title */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <Badge variant="purple">Simple Transparent Plans</Badge>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
             Predictable pricing for links that scale.
           </h1>
           <p className="text-base text-slate-600 dark:text-slate-400">
@@ -69,7 +76,7 @@ export default function PricingPage() {
 
         {/* 3 Tier Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {PRICING_PLANS.map((plan) => {
+          {plans?.map((plan) => {
             const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
             return (
               <div
@@ -90,7 +97,7 @@ export default function PricingPage() {
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">{plan.name}</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 min-h-[36px]">{plan.description}</p>
                   <div className="my-4">
-                    <span className="text-4xl font-extrabold text-slate-900 dark:text-white">${price}</span>
+                    <span className="text-4xl font-black text-slate-900 dark:text-white">${price}</span>
                     <span className="text-xs text-slate-400"> / month</span>
                   </div>
 
@@ -105,14 +112,22 @@ export default function PricingPage() {
                 </div>
 
                 <div className="pt-8">
-                  <Link href="/register">
+                  {plan.id === "free" ? (
+                    <Link href="/register">
+                      <Button variant="outline" className="w-full text-sm font-semibold">
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  ) : (
                     <Button
-                      variant={plan.highlight ? "gradient" : "outline"}
+                      variant={plan.highlight ? "glow" : "outline"}
                       className="w-full text-sm font-semibold"
+                      onClick={() => handleSelectPlan(plan.id)}
+                      isLoading={checkoutMutation.isPending}
                     >
                       {plan.cta}
                     </Button>
-                  </Link>
+                  )}
                 </div>
               </div>
             );

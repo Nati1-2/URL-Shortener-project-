@@ -2,16 +2,14 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Link2, Eye, EyeOff, Lock, Mail, User, Check, ArrowRight, ShieldCheck, Github } from "lucide-react";
+import { Link2, Eye, EyeOff, Lock, Mail, User, ArrowRight, Github } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useRegister } from "@/hooks/useAuth";
 import { useToastStore } from "@/store/useToastStore";
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const { register } = useAuthStore();
+  const registerMutation = useRegister();
   const { addToast } = useToastStore();
 
   const [name, setName] = useState("");
@@ -19,10 +17,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Calculate Password Strength Score (0 to 4)
   const getPasswordStrength = () => {
     let score = 0;
     if (password.length >= 8) score++;
@@ -53,21 +49,22 @@ export default function RegisterPage() {
       return;
     }
     setErrorMsg("");
-    setIsLoading(true);
 
-    try {
-      await register(name, email, password);
-      addToast({
-        type: "success",
-        title: "Account Created!",
-        message: "Welcome to LinkPulse! Your workspace is ready.",
-      });
-      router.push("/dashboard");
-    } catch (err) {
-      setErrorMsg("Failed to register account. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    registerMutation.mutate(
+      { name, email, password },
+      {
+        onSuccess: () => {
+          addToast({
+            type: "success",
+            title: "Account Created!",
+            message: "Welcome to LinkPulse! Your workspace is ready.",
+          });
+        },
+        onError: (err: any) => {
+          setErrorMsg(err?.message || "Failed to register account. Please try again.");
+        },
+      }
+    );
   };
 
   return (
@@ -78,15 +75,15 @@ export default function RegisterPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Top Header Logo */}
         <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-brand-gradient flex items-center justify-center text-white shadow-lg">
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-brand-gradient flex items-center justify-center text-white shadow-lg border border-white/20">
               <Link2 className="w-5 h-5 stroke-[2.5]" />
             </div>
-            <span className="font-bold text-2xl text-slate-900 dark:text-white">
+            <span className="font-extrabold text-2xl text-slate-900 dark:text-white tracking-tight">
               Link<span className="text-gradient">Pulse</span>
             </span>
           </Link>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
             Start your 14-day free trial
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -201,10 +198,10 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              variant="gradient"
+              variant="glow"
               size="lg"
-              isLoading={isLoading}
-              className="w-full text-base font-semibold"
+              isLoading={registerMutation.isPending}
+              className="w-full text-base font-bold"
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
               Create Free Account
@@ -214,7 +211,7 @@ export default function RegisterPage() {
           {/* Social Sign-up Divider */}
           <div className="relative flex items-center justify-center my-4">
             <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-            <span className="bg-white dark:bg-slate-900 px-3 text-[11px] uppercase font-bold text-slate-400 shrink-0">
+            <span className="bg-white dark:bg-slate-900 px-3 text-[10px] uppercase font-bold text-slate-400 shrink-0">
               Or sign up with
             </span>
           </div>
@@ -227,7 +224,7 @@ export default function RegisterPage() {
               onClick={() => handleSubmit({ preventDefault: () => {} } as any)}
               className="text-xs"
             >
-              Google
+              Google SSO
             </Button>
             <Button
               type="button"

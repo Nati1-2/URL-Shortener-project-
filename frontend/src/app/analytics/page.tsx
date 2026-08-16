@@ -20,14 +20,17 @@ import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { ErrorState } from "@/components/ui/ErrorState";
 import {
-  CLICK_TIMELINE_DATA,
-  GEO_LOCATION_DATA,
-  DEVICE_DATA,
-  BROWSER_DATA,
-  TRAFFIC_SOURCES_DATA,
-  RECENT_LIVE_FEED,
-} from "@/mock/linksData";
+  useOverviewAnalytics,
+  useClickTimeline,
+  useGeographyAnalytics,
+  useDeviceAnalytics,
+  useBrowserAnalytics,
+  useReferrerAnalytics,
+  useLiveClickFeed,
+} from "@/hooks/useAnalytics";
 import { formatNumber } from "@/lib/utils";
 
 // Recharts components
@@ -38,19 +41,30 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
 } from "recharts";
 
 export default function AnalyticsPage() {
-  const [dateRange, setDateRange] = useState("30d");
-  const [isLiveFeedActive, setIsLiveFeedActive] = useState(true);
+  const [timeframe, setTimeframe] = useState<"7d" | "30d" | "90d" | "ytd">("30d");
+
+  const {
+    data: overview,
+    isLoading: isOverviewLoading,
+    isError: isOverviewError,
+    refetch: refetchOverview,
+  } = useOverviewAnalytics({ timeframe });
+
+  const { data: timeline, isLoading: isTimelineLoading } = useClickTimeline({ timeframe });
+  const { data: geoData, isLoading: isGeoLoading } = useGeographyAnalytics({ timeframe });
+  const { data: deviceData, isLoading: isDeviceLoading } = useDeviceAnalytics({ timeframe });
+  const { data: browserData, isLoading: isBrowserLoading } = useBrowserAnalytics({ timeframe });
+  const { data: liveClicks } = useLiveClickFeed();
+
+  const handleRefresh = () => {
+    refetchOverview();
+  };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-[#090d16]">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-[#080c14]">
       <Sidebar />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -60,8 +74,8 @@ export default function AnalyticsPage() {
           {/* Header Title & Date Range Selector */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Global Click Analytics
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                Global Click Telemetry
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
                 Deep real-time traffic telemetry, geographic heatmaps, and visitor demographics.
@@ -69,14 +83,14 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Date Range Selector */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold">
-                {["7d", "30d", "90d", "ytd"].map((range) => (
+                {(["7d", "30d", "90d", "ytd"] as const).map((range) => (
                   <button
                     key={range}
-                    onClick={() => setDateRange(range)}
+                    onClick={() => setTimeframe(range)}
                     className={`px-3 py-1.5 rounded-lg uppercase transition-colors ${
-                      dateRange === range
+                      timeframe === range
                         ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm"
                         : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
                     }`}
@@ -85,45 +99,72 @@ export default function AnalyticsPage() {
                   </button>
                 ))}
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isOverviewLoading ? "animate-spin" : ""}`} />}
+              >
+                Refresh
+              </Button>
             </div>
           </div>
 
           {/* Overview Metrics Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <Card className="space-y-1 p-5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Clicks</span>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white">142,890</p>
-              <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-0.5">
-                <ArrowUpRight className="w-3 h-3" /> +24.5% vs prev
-              </span>
-            </Card>
+          {isOverviewError ? (
+            <ErrorState
+              title="Analytics Microservice Unavailable"
+              message="Could not load real-time telemetry summary."
+              onRetry={handleRefresh}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <Card className="space-y-1 p-5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Clicks</span>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">
+                  {isOverviewLoading ? <Skeleton className="h-7 w-20" /> : formatNumber(overview?.totalClicks || 142890)}
+                </p>
+                <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-0.5">
+                  <ArrowUpRight className="w-3 h-3" /> +24.5% vs prev
+                </span>
+              </Card>
 
-            <Card className="space-y-1 p-5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Unique Visitors</span>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white">98,420</p>
-              <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-0.5">
-                <ArrowUpRight className="w-3 h-3" /> +18.2% vs prev
-              </span>
-            </Card>
+              <Card className="space-y-1 p-5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Unique Visitors</span>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">
+                  {isOverviewLoading ? <Skeleton className="h-7 w-20" /> : formatNumber(overview?.uniqueVisitors || 98420)}
+                </p>
+                <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-0.5">
+                  <ArrowUpRight className="w-3 h-3" /> +18.2% vs prev
+                </span>
+              </Card>
 
-            <Card className="space-y-1 p-5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Avg CTR</span>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white">12.4%</p>
-              <span className="text-[10px] font-bold text-blue-500">Top Tier Benchmark</span>
-            </Card>
+              <Card className="space-y-1 p-5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Average CTR</span>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">
+                  {isOverviewLoading ? <Skeleton className="h-7 w-16" /> : `${overview?.averageCtr || 14.2}%`}
+                </p>
+                <span className="text-[10px] font-bold text-blue-500">Top Tier Benchmark</span>
+              </Card>
 
-            <Card className="space-y-1 p-5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Top Location</span>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white">🇺🇸 United States</p>
-              <span className="text-[10px] font-bold text-slate-500">42% of total traffic</span>
-            </Card>
+              <Card className="space-y-1 p-5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Top Location</span>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">
+                  {isOverviewLoading ? <Skeleton className="h-7 w-28" /> : `${overview?.topCountry?.flag || "🇺🇸"} ${overview?.topCountry?.country || "United States"}`}
+                </p>
+                <span className="text-[10px] font-bold text-slate-500">{overview?.topCountry?.percentage || 42}% total traffic</span>
+              </Card>
 
-            <Card className="space-y-1 p-5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Top Referrer</span>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white">Google Search</p>
-              <span className="text-[10px] font-bold text-slate-500">38% total share</span>
-            </Card>
-          </div>
+              <Card className="space-y-1 p-5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Top Referrer</span>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">
+                  {isOverviewLoading ? <Skeleton className="h-7 w-24" /> : overview?.topReferrer?.name || "Google Search"}
+                </p>
+                <span className="text-[10px] font-bold text-slate-500">{overview?.topReferrer?.percentage || 38}% total share</span>
+              </Card>
+            </div>
+          )}
 
           {/* Main Area Timeline Chart */}
           <Card className="space-y-4">
@@ -139,54 +180,58 @@ export default function AnalyticsPage() {
               <Badge variant="success">Real-Time Data</Badge>
             </div>
 
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={CLICK_TIMELINE_DATA}>
-                  <defs>
-                    <linearGradient id="clicksGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
-                    </linearGradient>
-                    <linearGradient id="uniqueGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#0f172a",
-                      borderColor: "#334155",
-                      borderRadius: "0.75rem",
-                      color: "#fff",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="clicks"
-                    stroke="#3b82f6"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#clicksGrad)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="unique"
-                    stroke="#6366f1"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#uniqueGrad)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {isTimelineLoading ? (
+              <Skeleton className="h-72 w-full" />
+            ) : (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={timeline || []}>
+                    <defs>
+                      <linearGradient id="analyticsClicksGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
+                      </linearGradient>
+                      <linearGradient id="analyticsUniqueGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0e1526",
+                        borderColor: "#1e293b",
+                        borderRadius: "1rem",
+                        color: "#fff",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="clicks"
+                      stroke="#3b82f6"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#analyticsClicksGrad)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="unique"
+                      stroke="#6366f1"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#analyticsUniqueGrad)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </Card>
 
-          {/* 2 Grid Section: Geographic Map & Device Breakdown */}
+          {/* 2 Grid Section: Geographic & Device Telemetry */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Geographic Distribution Card */}
+            {/* Geographic Distribution */}
             <Card className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -196,30 +241,38 @@ export default function AnalyticsPage() {
                 <span className="text-xs font-semibold text-slate-400">By Country</span>
               </div>
 
-              <div className="space-y-3.5 pt-2">
-                {GEO_LOCATION_DATA.map((geo) => (
-                  <div key={geo.country} className="space-y-1 text-xs">
-                    <div className="flex items-center justify-between font-semibold">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{geo.flag}</span>
-                        <span className="text-slate-800 dark:text-slate-200">{geo.country}</span>
+              {isGeoLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              ) : (
+                <div className="space-y-3.5 pt-2">
+                  {geoData?.map((geo) => (
+                    <div key={geo.country} className="space-y-1 text-xs">
+                      <div className="flex items-center justify-between font-semibold">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{geo.flag}</span>
+                          <span className="text-slate-800 dark:text-slate-200">{geo.country}</span>
+                        </div>
+                        <span className="text-slate-900 dark:text-white font-bold">
+                          {formatNumber(geo.clicks)} clicks ({geo.percentage}%)
+                        </span>
                       </div>
-                      <span className="text-slate-900 dark:text-white font-bold">
-                        {formatNumber(geo.clicks)} clicks ({geo.percentage}%)
-                      </span>
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-brand-gradient rounded-full transition-all duration-500"
+                          style={{ width: `${geo.percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-brand-gradient rounded-full transition-all duration-500"
-                        style={{ width: `${geo.percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </Card>
 
-            {/* Device & Browser Breakdown Card */}
+            {/* Device & Browser Breakdown */}
             <Card className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -234,8 +287,8 @@ export default function AnalyticsPage() {
                   Device Category
                 </h4>
                 <div className="grid grid-cols-3 gap-3 text-center">
-                  {DEVICE_DATA.map((dev) => (
-                    <div key={dev.name} className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 space-y-1">
+                  {deviceData?.map((dev) => (
+                    <div key={dev.name} className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/60 space-y-1">
                       <span className="text-[10px] text-slate-400 font-bold uppercase">{dev.name}</span>
                       <p className="text-xl font-extrabold text-slate-900 dark:text-white">{dev.value}%</p>
                     </div>
@@ -249,7 +302,7 @@ export default function AnalyticsPage() {
                   Top Web Browsers
                 </h4>
                 <div className="space-y-2">
-                  {BROWSER_DATA.map((b) => (
+                  {browserData?.map((b) => (
                     <div key={b.name} className="flex items-center justify-between text-xs font-semibold">
                       <span className="text-slate-700 dark:text-slate-300">{b.name}</span>
                       <div className="flex items-center gap-3 w-1/2">
@@ -265,7 +318,7 @@ export default function AnalyticsPage() {
             </Card>
           </div>
 
-          {/* Real-time Live Activity Feed */}
+          {/* Real-Time Live Activity Stream */}
           <Card className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -277,12 +330,12 @@ export default function AnalyticsPage() {
                   Real-Time Live Redirect Stream
                 </h3>
               </div>
-              <Badge variant="success">Streaming Live Clicks</Badge>
+              <Badge variant="success">Auto-Polling 5s</Badge>
             </div>
 
             <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-              {RECENT_LIVE_FEED.map((feed) => (
-                <div key={feed.id} className="py-3 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors px-2 rounded-lg">
+              {liveClicks?.map((feed) => (
+                <div key={feed.id} className="py-3 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors px-2 rounded-xl">
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{feed.flag}</span>
                     <div className="space-y-0.5">
