@@ -29,7 +29,7 @@ export class DomainController {
 
   public async verifyDomain(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const result = await domainService.verifyDomain(id);
       return res.status(200).json(successResponse(result, "Domain verified successfully"));
     } catch (err) {
@@ -39,13 +39,14 @@ export class DomainController {
 
   public async deleteDomain(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       await domainService.deleteDomain(id);
       return res.status(200).json(successResponse(null, "Domain deleted successfully"));
     } catch (err) {
       next(err);
     }
   }
+
 }
 
 export const domainController = new DomainController();

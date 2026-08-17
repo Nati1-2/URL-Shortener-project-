@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../services/analytics-service/node_modules/@prisma/client";
 import Redis from "ioredis";
 import {
   eventBroker,
@@ -9,9 +9,12 @@ import {
 import { createLogger } from "@linkpulse/logger";
 
 const logger = createLogger("analytics-worker");
-const prisma = new PrismaClient();
+const baseDbUrl = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/linkpulse?sslmode=disable";
+const dbUrl = baseDbUrl.includes("schema=") ? baseDbUrl : `${baseDbUrl.split("?")[0]}?schema=analytics&sslmode=require`;
+const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const redis = new Redis(REDIS_URL, { lazyConnect: true });
+
 
 async function processClickEvent(event: ClickRecordedEvent) {
   const { payload } = event;

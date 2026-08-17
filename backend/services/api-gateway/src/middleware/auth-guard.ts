@@ -7,10 +7,13 @@ const PUBLIC_PATHS = [
   "/api/v1/auth/refresh",
   "/api/v1/auth/forgot-password",
   "/api/v1/auth/reset-password",
+  "/api/v1/billing/webhook",
+  "/billing/webhook",
   "/api/v1/redirect",
   "/health",
   "/ready",
 ];
+
 
 export function authGuard(req: Request, res: Response, next: NextFunction) {
   const path = req.path;

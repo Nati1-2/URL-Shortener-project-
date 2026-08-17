@@ -15,7 +15,7 @@ export class WorkspaceController {
 
   public async getWorkspaceById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const ws = await workspaceService.getWorkspaceById(id);
       return res.status(200).json(successResponse(ws));
     } catch (err) {
@@ -45,7 +45,7 @@ export class WorkspaceController {
 
   public async getMembers(req: Request, res: Response, next: NextFunction) {
     try {
-      const { workspaceId } = req.params;
+      const workspaceId = req.params.workspaceId as string;
       const members = await workspaceService.getMembers(workspaceId);
       return res.status(200).json(successResponse(members));
     } catch (err) {
@@ -55,7 +55,7 @@ export class WorkspaceController {
 
   public async inviteMember(req: Request, res: Response, next: NextFunction) {
     try {
-      const { workspaceId } = req.params;
+      const workspaceId = req.params.workspaceId as string;
       const { email, role } = req.body;
       if (!email || !role) throw new BadRequestError("Email and role are required.");
 
@@ -73,7 +73,8 @@ export class WorkspaceController {
 
   public async updateMemberRole(req: Request, res: Response, next: NextFunction) {
     try {
-      const { workspaceId, memberId } = req.params;
+      const workspaceId = req.params.workspaceId as string;
+      const memberId = req.params.memberId as string;
       const { role } = req.body;
       if (!role) throw new BadRequestError("Role is required.");
 
@@ -86,13 +87,15 @@ export class WorkspaceController {
 
   public async removeMember(req: Request, res: Response, next: NextFunction) {
     try {
-      const { workspaceId, memberId } = req.params;
+      const workspaceId = req.params.workspaceId as string;
+      const memberId = req.params.memberId as string;
       await workspaceService.removeMember(workspaceId, memberId);
       return res.status(200).json(successResponse(null, "Member removed from workspace"));
     } catch (err) {
       next(err);
     }
   }
+
 }
 
 export const workspaceController = new WorkspaceController();

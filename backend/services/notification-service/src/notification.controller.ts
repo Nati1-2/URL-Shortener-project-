@@ -16,13 +16,14 @@ export class NotificationController {
 
   public async markAsRead(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       await notificationService.markAsRead(id);
       return res.status(200).json(successResponse(null, "Notification marked as read"));
     } catch (err) {
       next(err);
     }
   }
+
 
   public async markAllAsRead(req: Request, res: Response, next: NextFunction) {
     try {

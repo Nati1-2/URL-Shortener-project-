@@ -20,11 +20,19 @@
     "dev:billing": "npm --workspace=@linkpulse/billing-service run dev",
     "dev:notification": "npm --workspace=@linkpulse/notification-service run dev",
     "seed": "ts-node scripts/seed.ts",
+    "db:sync": "ts-node scripts/db-sync.ts",
+    "dev:all": "npx concurrently -k -n \"gateway,auth,link,redirect,analytics,workspace,domain,billing,notification\" -c \"blue,green,magenta,yellow,cyan,white,red,gray,blueBright\" \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:link\" \"npm run dev:redirect\" \"npm run dev:analytics\" \"npm run dev:workspace\" \"npm run dev:domain\" \"npm run dev:billing\" \"npm run dev:notification\"",
     "test": "npm --workspaces run test --if-present"
   },
   "devDependencies": {
     "@types/node": "^22.13.4",
+    "concurrently": "^9.1.2",
+    "dotenv": "^16.4.7",
+    "prisma": "^6.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3"
   }
 }

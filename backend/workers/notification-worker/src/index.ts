@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../services/notification-service/node_modules/@prisma/client";
 import {
   eventBroker,
   EVENT_QUEUES,
@@ -8,7 +8,10 @@ import {
 import { createLogger } from "@linkpulse/logger";
 
 const logger = createLogger("notification-worker");
-const prisma = new PrismaClient();
+const baseDbUrl = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/linkpulse?sslmode=disable";
+const dbUrl = baseDbUrl.includes("schema=") ? baseDbUrl : `${baseDbUrl.split("?")[0]}?schema=notification&sslmode=require`;
+const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
+
 
 async function processNotificationEvent(event: NotificationRequestedEvent) {
   const { payload } = event;

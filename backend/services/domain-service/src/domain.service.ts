@@ -1,8 +1,10 @@
+import dns from "dns";
 import { prisma } from "./db";
 import { NotFoundError, BadRequestError, ConflictError } from "@linkpulse/common";
 import { createLogger } from "@linkpulse/logger";
 
 const logger = createLogger("domain-service");
+const CNAME_TARGET = process.env.CNAME_TARGET || "cname.linkpulse.io";
 
 export class DomainService {
   public async getDomains(workspaceId: string = "ws_main") {
@@ -12,7 +14,6 @@ export class DomainService {
     });
 
     if (list.length === 0) {
-      // Return default verified domains if none added yet
       return [
         {
           id: "dom_default_1",
@@ -22,7 +23,7 @@ export class DomainService {
           sslStatus: "active",
           isCustom: true,
           isDefault: true,
-          dnsRecords: [{ type: "CNAME", name: "go", value: "cname.linkpulse.io", status: "verified" }],
+          dnsRecords: [{ type: "CNAME", name: "go", value: CNAME_TARGET, status: "verified" }],
           createdAt: new Date().toISOString(),
         },
         {
@@ -73,18 +74,31 @@ export class DomainService {
     const domain = await prisma.domain.findUnique({ where: { id } });
     if (!domain) throw new NotFoundError("Domain not found");
 
-    // Perform DNS CNAME verification simulation
+    let isVerified = false;
+
+    // Check actual DNS CNAME record
+    try {
+      const records = await dns.promises.resolveCname(domain.hostname);
+      isVerified = records.some((r) => r.toLowerCase().includes("linkpulse") || r.toLowerCase().includes("cname"));
+    } catch {
+      // In local testing / development mode or demo domain, treat as verified
+      if (domain.hostname.includes("localhost") || domain.hostname.includes("linkpulse.io") || process.env.NODE_ENV !== "production") {
+        isVerified = true;
+      }
+    }
+
     const updated = await prisma.domain.update({
       where: { id },
       data: {
-        status: "verified",
-        sslStatus: "active",
+        status: isVerified ? "verified" : "pending",
+        sslStatus: isVerified ? "active" : "provisioning",
       },
     });
 
-    logger.info("Domain DNS verified and SSL active", { id, hostname: updated.hostname });
-    return { verified: true, domain: this.formatDomain(updated) };
+    logger.info("Domain DNS verification result", { id, hostname: updated.hostname, verified: isVerified });
+    return { verified: isVerified, domain: this.formatDomain(updated) };
   }
+
 
   public async deleteDomain(id: string) {
     const domain = await prisma.domain.findUnique({ where: { id } });

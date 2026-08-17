@@ -7,8 +7,13 @@
   ],
   "scripts": {
     "dev": "npm --prefix frontend run dev",
-    "build": "npm --prefix frontend run build",
+    "dev:backend": "npm --prefix backend run dev:all",
+    "dev:all": "npx concurrently -k -n \"frontend,backend\" -c \"cyan,magenta\" \"npm --prefix frontend run dev\" \"npm --prefix backend run dev:all\"",
+    "db:sync": "npm --prefix backend run db:sync",
+    "seed": "npm --prefix backend run seed",
+    "build": "npm --prefix frontend run build && npm --prefix backend run build",
     "start": "npm --prefix frontend run start",
     "lint": "npm --prefix frontend run lint"
   }
 }
+

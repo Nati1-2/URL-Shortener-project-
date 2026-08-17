@@ -5,7 +5,7 @@ import { successResponse } from "@linkpulse/common";
 export class RedirectController {
   public async handleRedirect(req: Request, res: Response, next: NextFunction) {
     try {
-      const shortCode = req.params.shortCode;
+      const shortCode = req.params.shortCode as string;
       const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.ip || "127.0.0.1";
 
       const result = await redirectService.resolveLink(shortCode, req.headers, ip);
@@ -25,10 +25,11 @@ export class RedirectController {
 
   public async getResolvedData(req: Request, res: Response, next: NextFunction) {
     try {
-      const shortCode = req.params.shortCode;
+      const shortCode = req.params.shortCode as string;
       const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.ip || "127.0.0.1";
 
       const result = await redirectService.resolveLink(shortCode, req.headers, ip);
+
       return res.status(200).json(successResponse(result.link));
     } catch (err) {
       next(err);

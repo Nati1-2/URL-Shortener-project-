@@ -45,12 +45,15 @@ export class BillingController {
 
   public async webhook(req: Request, res: Response, next: NextFunction) {
     try {
-      await billingService.handleStripeWebhook(req.body);
-      return res.status(200).json({ received: true });
+      const rawBody = (req as any).rawBody || req.body;
+      const signature = req.headers["stripe-signature"] as string | undefined;
+      const result = await billingService.handleStripeWebhook(rawBody, signature);
+      return res.status(200).json(result);
     } catch (err) {
       next(err);
     }
   }
 }
+
 
 export const billingController = new BillingController();

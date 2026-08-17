@@ -33,7 +33,7 @@ export class LinkController {
 
   public async getLinkById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const link = await linkService.getLinkById(id);
       return res.status(200).json(successResponse(link));
     } catch (err) {
@@ -86,7 +86,7 @@ export class LinkController {
 
   public async updateLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const updated = await linkService.updateLink(id, req.body);
       return res.status(200).json(successResponse(updated, "Link updated successfully"));
     } catch (err) {
@@ -96,7 +96,7 @@ export class LinkController {
 
   public async deleteLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       await linkService.deleteLink(id);
       return res.status(200).json(successResponse(null, "Link deleted successfully"));
     } catch (err) {
@@ -132,13 +132,14 @@ export class LinkController {
 
   public async getStats(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const stats = await linkService.getLinkStats(id);
       return res.status(200).json(successResponse(stats));
     } catch (err) {
       next(err);
     }
   }
+
 }
 
 export const linkController = new LinkController();
