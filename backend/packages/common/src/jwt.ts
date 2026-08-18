@@ -1,18 +1,37 @@
 import jwt from "jsonwebtoken";
 import { UserPayload, JwtTokens } from "./types";
 
-const DEFAULT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "your_jwt_access_secret_change_me";
-const DEFAULT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "your_jwt_refresh_secret_change_me";
-
 const ACCESS_TOKEN_EXPIRY = "1h";
 const REFRESH_TOKEN_EXPIRY = "7d";
 
+function getAccessSecret(): string {
+  const secret = process.env.JWT_ACCESS_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("CRITICAL SECURITY ERROR: JWT_ACCESS_SECRET environment variable is missing.");
+    }
+    return "dev_jwt_access_fallback_key_only_for_local_development";
+  }
+  return secret;
+}
+
+function getRefreshSecret(): string {
+  const secret = process.env.JWT_REFRESH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("CRITICAL SECURITY ERROR: JWT_REFRESH_SECRET environment variable is missing.");
+    }
+    return "dev_jwt_refresh_fallback_key_only_for_local_development";
+  }
+  return secret;
+}
+
 export function generateTokens(payload: UserPayload): JwtTokens {
-  const accessToken = jwt.sign(payload, DEFAULT_ACCESS_SECRET, {
+  const accessToken = jwt.sign(payload, getAccessSecret(), {
     expiresIn: ACCESS_TOKEN_EXPIRY,
   });
 
-  const refreshToken = jwt.sign({ id: payload.id, email: payload.email }, DEFAULT_REFRESH_SECRET, {
+  const refreshToken = jwt.sign({ id: payload.id, email: payload.email }, getRefreshSecret(), {
     expiresIn: REFRESH_TOKEN_EXPIRY,
   });
 
@@ -24,9 +43,9 @@ export function generateTokens(payload: UserPayload): JwtTokens {
 }
 
 export function verifyAccessToken(token: string): UserPayload {
-  return jwt.verify(token, DEFAULT_ACCESS_SECRET) as UserPayload;
+  return jwt.verify(token, getAccessSecret()) as UserPayload;
 }
 
 export function verifyRefreshToken(token: string): { id: string; email: string } {
-  return jwt.verify(token, DEFAULT_REFRESH_SECRET) as { id: string; email: string };
+  return jwt.verify(token, getRefreshSecret()) as { id: string; email: string };
 }

@@ -35,9 +35,10 @@ async function syncDatabases() {
 
   const baseDb = databaseUrl.split("?")[0];
 
+  const isSsl = databaseUrl.includes("sslmode=require");
   for (const svc of services) {
     const schemaName = svc.replace("-service", "");
-    const svcDbUrl = `${baseDb}?schema=${schemaName}&sslmode=require`;
+    const svcDbUrl = `${baseDb}?schema=${schemaName}${isSsl ? "&sslmode=require" : ""}`;
     const schemaPath = path.join(__dirname, `../services/${svc}/prisma/schema.prisma`);
     console.log(`📦 [${svc}] Generating Prisma Client & Pushing Schema (schema: ${schemaName})...`);
     try {

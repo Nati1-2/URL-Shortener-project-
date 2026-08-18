@@ -1,20 +1,8 @@
 # Dependencies
 node_modules/
 **/node_modules/
-/.pnp
-.pnp.js
 
-# Testing
-/coverage
-**/coverage/
-
-# Next.js & Frontend Build Output
-.next/
-**/.next/
-out/
-**/out/
-
-# Backend & Typescript Build Output
+# TypeScript & Build Artifacts
 dist/
 **/dist/
 build/
@@ -22,7 +10,7 @@ build/
 *.tsbuildinfo
 **/*.tsbuildinfo
 
-# Environment & Secrets (STRICTLY NEVER COMMIT CREDENTIALS)
+# Environment & Secrets
 .env
 .env.*
 .env*.local
@@ -37,34 +25,25 @@ build/
 !.env*.example
 !**/.env*.example
 
-# Vercel & Cloud
-.vercel/
-**/.vercel/
+# Testing & Coverage
+coverage/
+**/coverage/
 
 # Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
-*.log
-**/*.log
 
-# Certificates, Keys & Secrets
+# Keys & Certificates
 *.pem
 *.key
 *.cert
 *.crt
 *.pfx
-*.p12
 
-# OS & IDE Files
+# OS files
 .DS_Store
 Thumbs.db
-.idea/
-.vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?

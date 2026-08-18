@@ -13,15 +13,18 @@ import { PrismaClient as BillingPrisma } from "../services/billing-service/node_
 import { PrismaClient as NotificationPrisma } from "../services/notification-service/node_modules/@prisma/client";
 import { hashPassword } from "../packages/common/src/password";
 
-const baseDb = (process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/linkpulse?sslmode=disable").split("?")[0];
+const rawDbUrl = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/linkpulse";
+const baseDb = rawDbUrl.split("?")[0];
+const isSsl = rawDbUrl.includes("sslmode=require");
+const sslParam = isSsl ? "&sslmode=require" : "";
 
-const authDb = new AuthPrisma({ datasources: { db: { url: `${baseDb}?schema=auth&sslmode=require` } } });
-const linkDb = new LinkPrisma({ datasources: { db: { url: `${baseDb}?schema=link&sslmode=require` } } });
-const analyticsDb = new AnalyticsPrisma({ datasources: { db: { url: `${baseDb}?schema=analytics&sslmode=require` } } });
-const workspaceDb = new WorkspacePrisma({ datasources: { db: { url: `${baseDb}?schema=workspace&sslmode=require` } } });
-const domainDb = new DomainPrisma({ datasources: { db: { url: `${baseDb}?schema=domain&sslmode=require` } } });
-const billingDb = new BillingPrisma({ datasources: { db: { url: `${baseDb}?schema=billing&sslmode=require` } } });
-const notificationDb = new NotificationPrisma({ datasources: { db: { url: `${baseDb}?schema=notification&sslmode=require` } } });
+const authDb = new AuthPrisma({ datasources: { db: { url: `${baseDb}?schema=auth${sslParam}` } } });
+const linkDb = new LinkPrisma({ datasources: { db: { url: `${baseDb}?schema=link${sslParam}` } } });
+const analyticsDb = new AnalyticsPrisma({ datasources: { db: { url: `${baseDb}?schema=analytics${sslParam}` } } });
+const workspaceDb = new WorkspacePrisma({ datasources: { db: { url: `${baseDb}?schema=workspace${sslParam}` } } });
+const domainDb = new DomainPrisma({ datasources: { db: { url: `${baseDb}?schema=domain${sslParam}` } } });
+const billingDb = new BillingPrisma({ datasources: { db: { url: `${baseDb}?schema=billing${sslParam}` } } });
+const notificationDb = new NotificationPrisma({ datasources: { db: { url: `${baseDb}?schema=notification${sslParam}` } } });
 
 
 async function main() {

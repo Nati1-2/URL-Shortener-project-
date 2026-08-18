@@ -1,7 +1,22 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 
-const baseDbUrl = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/linkpulse?sslmode=disable";
-const dbUrl = baseDbUrl.includes("schema=") ? baseDbUrl : `${baseDbUrl.split("?")[0]}?schema=notification&sslmode=require`;
+function getDatabaseUrl(): string {
+  const baseDbUrl = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/linkpulse";
+  if (baseDbUrl.includes("schema=")) {
+    return baseDbUrl;
+  }
+  const isSsl = baseDbUrl.includes("sslmode=require");
+  const baseUrl = baseDbUrl.split("?")[0];
+  return `${baseUrl}?schema=notification${isSsl ? "&sslmode=require" : ""}`;
+}
 
-export const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
+export const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: getDatabaseUrl(),
+    },
+  },
+});
+
 
