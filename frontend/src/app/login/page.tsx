@@ -14,7 +14,7 @@ export default function LoginPage() {
   const { addToast } = useToastStore();
 
   const [email, setEmail] = useState("alex.vance@acme.inc");
-  const [password, setPassword] = useState("password123");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");

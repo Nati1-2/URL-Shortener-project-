@@ -58,8 +58,8 @@ export default function SettingsPage() {
 
   // API Keys State
   const [apiKeys, setApiKeys] = useState([
-    { id: "key_1", name: "Production Node.js Microservices", token: "sk_live_998249a029310bc94", created: "2026-08-01" },
-    { id: "key_2", name: "Staging Testing Environment", token: "sk_test_8492049a029310bc0", created: "2026-08-05" },
+    { id: "key_1", name: "Production Node.js Microservices", token: "sk_live_••••••••••••••••", created: "2026-08-01" },
+    { id: "key_2", name: "Staging Testing Environment", token: "sk_test_••••••••••••••••", created: "2026-08-05" },
   ]);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
@@ -93,12 +93,15 @@ export default function SettingsPage() {
 
   const handleCreateApiKey = () => {
     if (!newKeyName) return;
-    const newToken = `sk_live_${Math.random().toString(36).substring(2, 18)}`;
+    const randomBytes = new Uint8Array(12);
+    crypto.getRandomValues(randomBytes);
+    const newToken = `sk_live_${Array.from(randomBytes).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 18)}`;
+    const maskedToken = `sk_live_••••••••••••••••`;
     setApiKeys([
       ...apiKeys,
-      { id: `key_${Date.now()}`, name: newKeyName, token: newToken, created: new Date().toISOString().split("T")[0] },
+      { id: `key_${Date.now()}`, name: newKeyName, token: maskedToken, created: new Date().toISOString().split("T")[0] },
     ]);
-    addToast({ type: "success", title: "API Key Created!", message: newToken });
+    addToast({ type: "success", title: "API Key Created!", message: "Your new key has been generated. Copy it now — it won't be shown again." });
     setNewKeyName("");
     setShowNewKeyModal(false);
   };

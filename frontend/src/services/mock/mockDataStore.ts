@@ -151,7 +151,7 @@ let linksDatabase: Link[] = [
     clicks: 3120,
     uniqueVisitors: 1400,
     status: "password_protected",
-    password: "secretpassword123",
+    password: "mock_hashed_value",
     tags: ["Fundraising", "Confidential"],
     createdAt: "2026-08-08T11:00:00.000Z",
   },

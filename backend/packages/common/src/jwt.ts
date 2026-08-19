@@ -7,10 +7,10 @@ const REFRESH_TOKEN_EXPIRY = "7d";
 function getAccessSecret(): string {
   const secret = process.env.JWT_ACCESS_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("CRITICAL SECURITY ERROR: JWT_ACCESS_SECRET environment variable is missing.");
-    }
-    return "dev_jwt_access_fallback_key_only_for_local_development";
+    throw new Error(
+      "CRITICAL SECURITY ERROR: JWT_ACCESS_SECRET environment variable is missing. " +
+      "Set it in your .env file (see backend/.env.example)."
+    );
   }
   return secret;
 }
@@ -18,10 +18,10 @@ function getAccessSecret(): string {
 function getRefreshSecret(): string {
   const secret = process.env.JWT_REFRESH_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("CRITICAL SECURITY ERROR: JWT_REFRESH_SECRET environment variable is missing.");
-    }
-    return "dev_jwt_refresh_fallback_key_only_for_local_development";
+    throw new Error(
+      "CRITICAL SECURITY ERROR: JWT_REFRESH_SECRET environment variable is missing. " +
+      "Set it in your .env file (see backend/.env.example)."
+    );
   }
   return secret;
 }

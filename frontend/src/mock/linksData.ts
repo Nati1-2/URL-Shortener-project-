@@ -55,7 +55,7 @@ export const INITIAL_LINKS: ShortLink[] = [
     status: "password_protected",
     domain: "pulse.link",
     tags: ["Sales", "Promo"],
-    password: "secretpassword123",
+    password: "••••••••",
   },
   {
     id: "lnk_104",
