@@ -1,11 +1,6 @@
-import Redis from "ioredis";
+import { createRedisClient } from "@linkpulse/common";
 
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-
-export const redis = new Redis(REDIS_URL, {
-  lazyConnect: true,
-  maxRetriesPerRequest: 1,
-});
+export const redis = createRedisClient();
 
 redis.on("error", (err) => {
   // Silent fallback

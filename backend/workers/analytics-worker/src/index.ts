@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "../../../services/analytics-service/node_modules/@prisma/client";
-import Redis from "ioredis";
+import { createRedisClient } from "@linkpulse/common";
 import {
   eventBroker,
   EVENT_QUEUES,
@@ -22,8 +22,7 @@ function getDatabaseUrl(): string {
 }
 
 const prisma = new PrismaClient({ datasources: { db: { url: getDatabaseUrl() } } });
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-const redis = new Redis(REDIS_URL, { lazyConnect: true });
+const redis = createRedisClient();
 
 
 async function processClickEvent(event: ClickRecordedEvent) {

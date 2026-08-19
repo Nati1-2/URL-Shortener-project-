@@ -33,6 +33,7 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3"
+    "@prisma/client": "^6.19.3",
+    "@upstash/redis": "^1.38.2"
   }
 }
