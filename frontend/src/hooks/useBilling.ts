@@ -32,3 +32,15 @@ export function useCheckout() {
     },
   });
 }
+
+export function useBillingPortal() {
+  return useMutation({
+    mutationFn: () => billingService.openBillingPortal(),
+    onSuccess: (data) => {
+      if (typeof window !== "undefined" && data.portalUrl) {
+        window.location.href = data.portalUrl;
+      }
+    },
+  });
+}
+

@@ -27,7 +27,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useWorkspaceMembers, useInviteMember } from "@/hooks/useWorkspaces";
 import { useDomains, useAddDomain, useVerifyDomain } from "@/hooks/useDomains";
-import { useSubscription } from "@/hooks/useBilling";
+import { useSubscription, useCheckout, useBillingPortal } from "@/hooks/useBilling";
 import { Role } from "@/types";
 import { RevealOnScroll } from "@/components/animation/ScrollReveal";
 
@@ -45,6 +45,8 @@ export default function SettingsPage() {
   const addDomainMutation = useAddDomain();
   const verifyDomainMutation = useVerifyDomain();
   const { data: subscription } = useSubscription(activeWorkspaceId);
+  const checkoutMutation = useCheckout();
+  const billingPortalMutation = useBillingPortal();
 
   // Profile Form State
   const [name, setName] = useState(user?.name || "Alex Vance");
@@ -459,34 +461,80 @@ export default function SettingsPage() {
                 <Card className="space-y-4 border-2 border-blue-500/30 bg-blue-500/5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
-                      <Badge variant="purple">{subscription?.planName || "Pro Growth Plan Active"}</Badge>
-                      <h3 className="text-2xl font-black text-slate-900 dark:text-white">$19 / Month</h3>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="purple">{subscription?.planName || "Pro Growth Plan Active"}</Badge>
+                        <Badge variant={subscription?.status === "active" ? "success" : "warning"}>
+                          {subscription?.status?.toUpperCase() || "ACTIVE"}
+                        </Badge>
+                      </div>
+                      <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                        {subscription?.planId === "enterprise" ? "$79 / Month" : subscription?.planId === "free" ? "$0 / Month" : "$19 / Month"}
+                      </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Your subscription renews automatically on Sept 14, 2026.
+                        {subscription?.currentPeriodEnd
+                          ? `Your subscription renews on ${new Date(subscription.currentPeriodEnd).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.`
+                          : "Manage payment methods and billing intervals via Stripe."}
                       </p>
                     </div>
-                    <Button variant="glow" size="md">
-                      Upgrade to Enterprise
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="md"
+                        onClick={() => billingPortalMutation.mutate()}
+                        isLoading={billingPortalMutation.isPending}
+                        leftIcon={<CreditCard className="w-4 h-4" />}
+                      >
+                        Stripe Customer Portal
+                      </Button>
+                      <Button
+                        variant="glow"
+                        size="md"
+                        onClick={() => {
+                          if (subscription?.planId === "enterprise") {
+                            billingPortalMutation.mutate();
+                          } else {
+                            checkoutMutation.mutate({ planId: "enterprise", isYearly: true });
+                          }
+                        }}
+                        isLoading={checkoutMutation.isPending}
+                      >
+                        {subscription?.planId === "enterprise" ? "Manage Plan" : "Upgrade to Enterprise"}
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2 text-xs">
                     <div className="flex justify-between font-semibold">
                       <span>Monthly Click Limit Usage</span>
                       <span className="text-blue-500">
-                        {subscription?.usedClicksCurrentPeriod.toLocaleString() || "14,230"} / {subscription?.monthlyClicksLimit.toLocaleString() || "50,000"} Clicks (28%)
+                        {(subscription?.usedClicksCurrentPeriod ?? 14230).toLocaleString()} / {(subscription?.monthlyClicksLimit ?? 50000).toLocaleString()} Clicks ({Math.round(((subscription?.usedClicksCurrentPeriod ?? 14230) / (subscription?.monthlyClicksLimit ?? 50000)) * 100)}%)
                       </span>
                     </div>
                     <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-brand-gradient rounded-full w-[28%]" />
+                      <div
+                        className="h-full bg-brand-gradient rounded-full"
+                        style={{
+                          width: `${Math.min(100, Math.round(((subscription?.usedClicksCurrentPeriod ?? 14230) / (subscription?.monthlyClicksLimit ?? 50000)) * 100))}%`,
+                        }}
+                      />
                     </div>
                   </div>
                 </Card>
 
                 <Card className="space-y-4">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                    Payment Invoices History
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                      Payment Invoices & Receipts
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => billingPortalMutation.mutate()}
+                      className="text-xs text-blue-500 hover:text-blue-600"
+                    >
+                      View all in Stripe →
+                    </Button>
+                  </div>
                   <div className="space-y-2 text-xs">
                     {[
                       { id: "inv_101", date: "Aug 01, 2026", amount: "$19.00", status: "Paid" },

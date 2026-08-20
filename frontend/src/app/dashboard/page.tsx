@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import confetti from "canvas-confetti";
 import {
   Link2,
   MousePointerClick,
@@ -13,6 +15,7 @@ import {
   ExternalLink,
   ArrowUpRight,
   RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
@@ -48,7 +51,26 @@ import {
 
 export default function DashboardPage() {
   const { addToast } = useToastStore();
+  const searchParams = useSearchParams();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("checkout") === "success") {
+      setCheckoutSuccess(true);
+      const plan = searchParams.get("plan") || "Pro";
+      addToast({
+        type: "success",
+        title: "Payment Successful!",
+        message: `Welcome to LinkPulse ${plan.charAt(0).toUpperCase() + plan.slice(1)}! Your account limits have been instantly updated.`,
+      });
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+    }
+  }, [searchParams, addToast]);
 
   // TanStack Query Hooks
   const {
@@ -92,6 +114,32 @@ export default function DashboardPage() {
         <DashboardHeader />
 
         <main className="p-6 sm:p-8 space-y-8 max-w-7xl mx-auto w-full">
+          {checkoutSuccess && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-blue-500/15 to-purple-500/15 border border-emerald-500/30 flex items-center justify-between gap-4 animate-fade-in shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-500 dark:text-emerald-400">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Subscription Activated Successfully!
+                  </h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Thank you for subscribing. Your upgraded link limits, custom domains, and real-time telemetry are now unlocked.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCheckoutSuccess(false)}
+                className="shrink-0 text-xs"
+              >
+                Dismiss
+              </Button>
+            </div>
+          )}
+
           {/* Welcome Header */}
           <RevealOnScroll direction="up" delay={0.02}>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
