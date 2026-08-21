@@ -21,6 +21,10 @@
     "dev:notification": "npm --workspace=@linkpulse/notification-service run dev",
     "seed": "ts-node scripts/seed.ts",
     "db:sync": "ts-node scripts/db-sync.ts",
+    "db:migrate": "ts-node scripts/migrate.ts dev",
+    "db:migrate:deploy": "ts-node scripts/migrate.ts deploy",
+    "db:migrate:status": "ts-node scripts/migrate.ts status",
+    "prisma:generate:all": "prisma generate --schema=services/auth-service/prisma/schema.prisma && prisma generate --schema=services/link-service/prisma/schema.prisma && prisma generate --schema=services/analytics-service/prisma/schema.prisma && prisma generate --schema=services/workspace-service/prisma/schema.prisma && prisma generate --schema=services/domain-service/prisma/schema.prisma && prisma generate --schema=services/billing-service/prisma/schema.prisma && prisma generate --schema=services/notification-service/prisma/schema.prisma",
     "dev:all": "npx concurrently -k -n \"gateway,auth,link,redirect,analytics,workspace,domain,billing,notification\" -c \"blue,green,magenta,yellow,cyan,white,red,gray,blueBright\" \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:link\" \"npm run dev:redirect\" \"npm run dev:analytics\" \"npm run dev:workspace\" \"npm run dev:domain\" \"npm run dev:billing\" \"npm run dev:notification\"",
     "test": "npm --workspaces run test --if-present"
   },
