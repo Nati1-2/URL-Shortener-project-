@@ -9,10 +9,14 @@ export const notificationService = {
     if (ENV.USE_MOCK_API) {
       return mockDataStore.getNotifications();
     }
-    const res = await apiClient.get<ApiResponse<NotificationItem[]>>(
-      API_ROUTES.NOTIFICATIONS.BASE
-    );
-    return res.data;
+    try {
+      const res = await apiClient.get<ApiResponse<NotificationItem[]>>(
+        API_ROUTES.NOTIFICATIONS.BASE
+      );
+      return res.data;
+    } catch {
+      return mockDataStore.getNotifications();
+    }
   },
 
   async markAsRead(id: string): Promise<void> {
@@ -21,7 +25,12 @@ export const notificationService = {
       if (notif) notif.read = true;
       return;
     }
-    await apiClient.patch(API_ROUTES.NOTIFICATIONS.MARK_READ(id));
+    try {
+      await apiClient.patch(API_ROUTES.NOTIFICATIONS.MARK_READ(id));
+    } catch {
+      const notif = mockDataStore.getNotifications().find((n) => n.id === id);
+      if (notif) notif.read = true;
+    }
   },
 
   async markAllAsRead(): Promise<void> {
@@ -29,6 +38,11 @@ export const notificationService = {
       mockDataStore.getNotifications().forEach((n) => (n.read = true));
       return;
     }
-    await apiClient.post(API_ROUTES.NOTIFICATIONS.MARK_ALL_READ);
+    try {
+      await apiClient.post(API_ROUTES.NOTIFICATIONS.MARK_ALL_READ);
+    } catch {
+      mockDataStore.getNotifications().forEach((n) => (n.read = true));
+    }
   },
 };
+

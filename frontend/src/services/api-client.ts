@@ -6,6 +6,14 @@ export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
+export interface ServiceHealthStatus {
+  service: string;
+  status: "healthy" | "unhealthy" | "checking";
+  latencyMs?: number;
+  url: string;
+  port?: number;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -40,6 +48,65 @@ class ApiClient {
     }
 
     return url.toString();
+  }
+
+  public async checkHealth(customUrl?: string): Promise<{ healthy: boolean; latencyMs: number }> {
+    const start = performance.now();
+    const target = customUrl || `${this.baseUrl.replace(/\/api\/v1$/, "")}/health`;
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(target, { method: "GET", signal: controller.signal });
+      clearTimeout(id);
+      const latencyMs = Math.round(performance.now() - start);
+      return { healthy: res.ok, latencyMs };
+    } catch {
+      return { healthy: false, latencyMs: 0 };
+    }
+  }
+
+  public async pingMicroservices(): Promise<ServiceHealthStatus[]> {
+    const services = [
+      { service: "API Gateway", url: "http://localhost:8000/health", port: 8000 },
+      { service: "Auth Service", url: "http://localhost:8001/health", port: 8001 },
+      { service: "Link Service", url: "http://localhost:8002/health", port: 8002 },
+      { service: "Redirect Service", url: "http://localhost:8003/health", port: 8003 },
+      { service: "Analytics Service", url: "http://localhost:8004/health", port: 8004 },
+      { service: "Workspace Service", url: "http://localhost:8005/health", port: 8005 },
+      { service: "Domain Service", url: "http://localhost:8006/health", port: 8006 },
+      { service: "Billing Service", url: "http://localhost:8007/health", port: 8007 },
+      { service: "Notification Service", url: "http://localhost:8008/health", port: 8008 },
+    ];
+
+    const results = await Promise.all(
+      services.map(async (s) => {
+        const start = performance.now();
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 2000);
+          const res = await fetch(s.url, { method: "GET", signal: controller.signal });
+          clearTimeout(timer);
+          const latencyMs = Math.round(performance.now() - start);
+          return {
+            service: s.service,
+            url: s.url,
+            port: s.port,
+            status: res.ok ? ("healthy" as const) : ("unhealthy" as const),
+            latencyMs,
+          };
+        } catch {
+          return {
+            service: s.service,
+            url: s.url,
+            port: s.port,
+            status: "unhealthy" as const,
+            latencyMs: 0,
+          };
+        }
+      })
+    );
+
+    return results;
   }
 
   public async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -158,3 +225,4 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient();
+

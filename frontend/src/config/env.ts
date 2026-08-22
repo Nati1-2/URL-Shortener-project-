@@ -1,13 +1,32 @@
 /**
  * Application environment configuration.
- * Safely exposes environment variables with fallbacks.
+ * Safely exposes environment variables with fallbacks and runtime override.
  */
 
 export const ENV = {
   NODE_ENV: process.env.NODE_ENV || "development",
   IS_PRODUCTION: process.env.NODE_ENV === "production",
   IS_DEVELOPMENT: process.env.NODE_ENV === "development",
-  USE_MOCK_API: process.env.NEXT_PUBLIC_USE_MOCK_API === "true" || !process.env.NEXT_PUBLIC_API_GATEWAY_URL,
+
+  get USE_MOCK_API(): boolean {
+    if (typeof window !== "undefined") {
+      const override = localStorage.getItem("linkpulse_engine_mode");
+      if (override === "mock") return true;
+      if (override === "live") return false;
+    }
+    return process.env.NEXT_PUBLIC_USE_MOCK_API === "true" || !process.env.NEXT_PUBLIC_API_GATEWAY_URL;
+  },
+
+  setEngineMode(mode: "live" | "mock" | "auto") {
+    if (typeof window !== "undefined") {
+      if (mode === "auto") {
+        localStorage.removeItem("linkpulse_engine_mode");
+      } else {
+        localStorage.setItem("linkpulse_engine_mode", mode);
+      }
+      window.dispatchEvent(new CustomEvent("linkpulse:engine_mode_changed", { detail: mode }));
+    }
+  },
 
   APP_URL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   API_GATEWAY_URL: process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8000/api/v1",
@@ -24,3 +43,4 @@ export const ENV = {
 
   DEFAULT_TIMEOUT_MS: 15000,
 } as const;
+

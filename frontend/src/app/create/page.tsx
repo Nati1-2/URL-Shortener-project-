@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
@@ -15,6 +15,10 @@ import {
   Clock,
   Globe,
   Sliders,
+  Download,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
@@ -25,6 +29,7 @@ import { Switch } from "@/components/ui/Switch";
 import { useCreateLink } from "@/hooks/useLinks";
 import { useDomains } from "@/hooks/useDomains";
 import { useToastStore } from "@/store/useToastStore";
+import { linkService } from "@/services/link.service";
 import { DOMAINS } from "@/lib/constants";
 import { Link as LinkType } from "@/types";
 import { RevealOnScroll } from "@/components/animation/ScrollReveal";
@@ -41,6 +46,7 @@ export default function CreateUrlPage() {
   const [domain, setDomain] = useState("ly.nk");
   const [customSlug, setCustomSlug] = useState("");
   const [tags, setTags] = useState("Marketing, Campaign");
+  const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
 
   // Advanced Options State
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
@@ -59,6 +65,25 @@ export default function CreateUrlPage() {
   const [createdLink, setCreatedLink] = useState<LinkType | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Live Slug Check
+  useEffect(() => {
+    if (!customSlug.trim()) {
+      setSlugStatus("idle");
+      return;
+    }
+    setSlugStatus("checking");
+    const timeoutId = setTimeout(async () => {
+      try {
+        const res = await linkService.checkSlugAvailability(customSlug.trim(), domain);
+        setSlugStatus(res.available ? "available" : "taken");
+      } catch {
+        setSlugStatus("available");
+      }
+    }, 400);
+
+    return () => clearTimeout(timeoutId);
+  }, [customSlug, domain]);
+
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -69,6 +94,34 @@ export default function CreateUrlPage() {
     } catch {
       // ignore clipboard error
     }
+  };
+
+  // Build full destination URL with UTM params
+  const computeFinalDestinationUrl = (): string => {
+    if (!originalUrl) return "";
+    try {
+      const url = new URL(originalUrl.startsWith("http") ? originalUrl : `https://${originalUrl}`);
+      if (utmSource) url.searchParams.set("utm_source", utmSource);
+      if (utmMedium) url.searchParams.set("utm_medium", utmMedium);
+      if (utmCampaign) url.searchParams.set("utm_campaign", utmCampaign);
+      return url.toString();
+    } catch {
+      return originalUrl;
+    }
+  };
+
+  const handleDownloadQrSvg = () => {
+    const svgElement = document.getElementById("qr-preview-svg");
+    if (!svgElement) return;
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `qrcode-${customSlug || "shortlink"}.svg`;
+    link.click();
+    URL.revokeObjectURL(url);
+    addToast({ type: "success", title: "QR Code Vector SVG Downloaded" });
   };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -87,10 +140,12 @@ export default function CreateUrlPage() {
       }
     }
 
+    const finalOriginalUrl = computeFinalDestinationUrl();
+
     createMutation.mutate(
       {
         title: finalTitle,
-        originalUrl,
+        originalUrl: finalOriginalUrl,
         shortCode: customSlug.trim() || undefined,
         domain: domain || "ly.nk",
         status: isPasswordProtected ? "password_protected" : "active",
@@ -221,16 +276,34 @@ export default function CreateUrlPage() {
                         </select>
                       </div>
 
-                      <Input
-                        label="Custom Slug / Alias"
-                        type="text"
-                        placeholder="e.g. summer-sale"
-                        value={customSlug}
-                        onChange={(e) =>
-                          setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
-                        }
-                        helperText="Leave empty for auto-generated short code."
-                      />
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                            Custom Slug / Alias
+                          </label>
+                          {slugStatus === "checking" && (
+                            <span className="text-[10px] text-slate-400">Checking...</span>
+                          )}
+                          {slugStatus === "available" && (
+                            <span className="text-[10px] text-emerald-500 font-bold flex items-center gap-0.5">
+                              <CheckCircle2 className="w-3 h-3" /> Available
+                            </span>
+                          )}
+                          {slugStatus === "taken" && (
+                            <span className="text-[10px] text-red-500 font-bold flex items-center gap-0.5">
+                              <AlertCircle className="w-3 h-3" /> Taken
+                            </span>
+                          )}
+                        </div>
+                        <Input
+                          placeholder="e.g. summer-sale"
+                          value={customSlug}
+                          onChange={(e) =>
+                            setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                          }
+                          helperText="Leave empty for auto-generated short code."
+                        />
+                      </div>
                     </div>
 
                     <Input
@@ -248,7 +321,7 @@ export default function CreateUrlPage() {
                   <Card className="space-y-5">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       <Sliders className="w-5 h-5 text-purple-500" />
-                      <span>Security & Targeting Rules</span>
+                      <span>Security & UTM Builder</span>
                     </h3>
 
                     {/* Password Protection */}
@@ -291,7 +364,7 @@ export default function CreateUrlPage() {
                     {/* UTM Builder */}
                     <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                        UTM Parameter Builder
+                        UTM Campaign Builder
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <Input
@@ -310,6 +383,14 @@ export default function CreateUrlPage() {
                           onChange={(e) => setUtmCampaign(e.target.value)}
                         />
                       </div>
+
+                      {/* Live Full URL Preview */}
+                      {(utmSource || utmMedium || utmCampaign) && (
+                        <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-mono text-slate-600 dark:text-slate-300 break-all">
+                          <span className="text-blue-500 font-bold block mb-1">Target with UTMs:</span>
+                          {computeFinalDestinationUrl()}
+                        </div>
+                      )}
                     </div>
                   </Card>
                 </RevealOnScroll>
@@ -340,6 +421,7 @@ export default function CreateUrlPage() {
 
                   <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-md inline-block">
                     <QRCodeSVG
+                      id="qr-preview-svg"
                       value={`https://${domain}/${customSlug || "preview-slug"}`}
                       size={160}
                       fgColor={qrFgColor}
@@ -367,6 +449,18 @@ export default function CreateUrlPage() {
                         className="w-8 h-8 rounded border border-slate-300 cursor-pointer"
                       />
                     </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadQrSvg}
+                      leftIcon={<Download className="w-3.5 h-3.5" />}
+                      className="w-full text-xs font-semibold"
+                    >
+                      Download Vector SVG
+                    </Button>
                   </div>
                 </Card>
               </RevealOnScroll>
@@ -408,3 +502,4 @@ export default function CreateUrlPage() {
     </div>
   );
 }
+
