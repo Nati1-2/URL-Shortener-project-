@@ -109,6 +109,20 @@ class ApiClient {
     return results;
   }
 
+  private getActiveWorkspaceId(): string | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const uiRaw = localStorage.getItem("linkpulse_ui_store");
+      if (uiRaw) {
+        const parsed = JSON.parse(uiRaw);
+        return parsed?.state?.activeWorkspaceId || null;
+      }
+    } catch {
+      // ignore parsing error
+    }
+    return null;
+  }
+
   public async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
     const { timeoutMs = ENV.DEFAULT_TIMEOUT_MS, params, headers, ...restOptions } = options;
 
@@ -116,6 +130,7 @@ class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const token = this.getAuthToken();
+    const workspaceId = this.getActiveWorkspaceId();
     const requestId = `req_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
 
     const requestHeaders: Record<string, string> = {
@@ -123,6 +138,7 @@ class ApiClient {
       "Accept": "application/json",
       "x-request-id": requestId,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
       ...(headers as Record<string, string>),
     };
 
@@ -146,13 +162,14 @@ class ApiClient {
       if (!response.ok) {
         const apiError: ApiError = {
           status: response.status,
-          message: responseData?.message || response.statusText || "An unexpected error occurred",
-          code: responseData?.code || `HTTP_${response.status}`,
-          errors: responseData?.errors,
+          message: responseData?.error?.message || responseData?.message || response.statusText || "An unexpected error occurred",
+          code: responseData?.error?.code || responseData?.code || `HTTP_${response.status}`,
+          errors: responseData?.error?.details || responseData?.errors,
           requestId,
         };
 
         if (response.status === 401 && typeof window !== "undefined") {
+          localStorage.removeItem("linkpulse_auth");
           window.dispatchEvent(new CustomEvent("linkpulse:unauthorized", { detail: apiError }));
         }
 

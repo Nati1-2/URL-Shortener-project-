@@ -34,7 +34,11 @@ export class LinkController {
   public async getLinkById(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const link = await linkService.getLinkById(id, String(req.headers["x-user-id"]));
+      const link = await linkService.getLinkById(
+        id,
+        req.headers["x-user-id"] ? String(req.headers["x-user-id"]) : undefined,
+        req.headers["x-workspace-id"] ? String(req.headers["x-workspace-id"]) : undefined
+      );
       return res.status(200).json(successResponse(link));
     } catch (err) {
       next(err);

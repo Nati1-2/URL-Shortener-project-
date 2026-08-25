@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import confetti from "canvas-confetti";
+import { useRouter, useSearchParams } from "next/navigation";
+
 import { QRCodeSVG } from "qrcode.react";
 import {
   Link2,
@@ -16,7 +16,6 @@ import {
   ExternalLink,
   ArrowUpRight,
   RefreshCw,
-  Sparkles,
   Share2,
   QrCode,
   Download,
@@ -38,6 +37,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ServiceErrorBoundary } from "@/components/error/ServiceErrorBoundary";
 import { useLinks, useCreateLink } from "@/hooks/useLinks";
+import { useCurrentUser } from "@/hooks/useAuth";
 import { useOverviewAnalytics, useClickTimeline, useDeviceAnalytics } from "@/hooks/useAnalytics";
 import { useToastStore } from "@/store/useToastStore";
 import { formatNumber, formatDate, truncateUrl } from "@/lib/utils";
@@ -64,8 +64,8 @@ import {
 function DashboardContent() {
   const { addToast } = useToastStore();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
 
   // Quick Shorten Bar state
   const [quickUrl, setQuickUrl] = useState("");
@@ -78,20 +78,24 @@ function DashboardContent() {
 
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
-      setCheckoutSuccess(false);
-      const plan = searchParams.get("plan") || "Pro";
       addToast({
-        type: "success",
+        type: "info",
         title: "Checkout received",
         message: "Your plan will update after Stripe sends a verified webhook.",
       });
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
     }
   }, [searchParams, addToast]);
+
+  const {
+    isLoading: isAuthLoading,
+    isError: isAuthError,
+  } = useCurrentUser();
+
+  useEffect(() => {
+    if (isAuthError) {
+      router.replace("/login?next=/dashboard");
+    }
+  }, [isAuthError, router]);
 
   // TanStack Query Hooks
   const {
@@ -144,11 +148,6 @@ function DashboardContent() {
         onSuccess: (newLink) => {
           setQuickUrl("");
           setQuickAlias("");
-          confetti({
-            particleCount: 70,
-            spread: 60,
-            origin: { y: 0.6 },
-          });
           setSelectedLinkForShare(newLink);
           addToast({
             type: "success",
@@ -168,6 +167,17 @@ function DashboardContent() {
 
   const recentLinks = linksData?.data || [];
 
+  if (isAuthLoading || isAuthError) {
+    return (
+      <div className="flex min-h-screen bg-slate-50 dark:bg-[#080c14] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-slate-500">Checking your session...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-[#080c14]">
       {/* Sidebar Navigation */}
@@ -178,31 +188,6 @@ function DashboardContent() {
         <DashboardHeader />
 
         <main className="p-6 sm:p-8 space-y-8 max-w-7xl mx-auto w-full">
-          {checkoutSuccess && (
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-blue-500/15 to-purple-500/15 border border-emerald-500/30 flex items-center justify-between gap-4 animate-fade-in shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-500 dark:text-emerald-400">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Subscription Activated Successfully!
-                  </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Thank you for subscribing. Your upgraded link limits, custom domains, and real-time telemetry are now unlocked.
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCheckoutSuccess(false)}
-                className="shrink-0 text-xs"
-              >
-                Dismiss
-              </Button>
-            </div>
-          )}
 
           {/* Welcome Header */}
           <RevealOnScroll direction="up" delay={0.02}>
@@ -304,7 +289,7 @@ function DashboardContent() {
                       <Skeleton className="h-8 w-24" />
                     ) : (
                       <p className="text-3xl font-black text-slate-900 dark:text-white">
-                        {formatNumber(linksData?.pagination?.total || recentLinks.length || 6)}
+                        {formatNumber(linksData?.pagination?.total ?? recentLinks.length)}
                       </p>
                     )}
                     <div className="flex items-center gap-1 text-[11px] text-emerald-500 font-bold pt-1">
@@ -327,12 +312,12 @@ function DashboardContent() {
                       <Skeleton className="h-8 w-28" />
                     ) : (
                       <p className="text-3xl font-black text-slate-900 dark:text-white">
-                        {formatNumber(analytics?.totalClicks || 142890)}
+                        {formatNumber(analytics?.totalClicks ?? 0)}
                       </p>
                     )}
                     <div className="flex items-center gap-1 text-[11px] text-emerald-500 font-bold pt-1">
                       <ArrowUpRight className="w-3.5 h-3.5" />
-                      <span>+{analytics?.clickGrowthRate || 24.5}% volume</span>
+                      <span>+{analytics?.clickGrowthRate ?? 0}% volume</span>
                     </div>
                   </Card>
                 </StaggerItem>
@@ -350,7 +335,7 @@ function DashboardContent() {
                       <Skeleton className="h-8 w-20" />
                     ) : (
                       <p className="text-3xl font-black text-slate-900 dark:text-white">
-                        {analytics?.activeLinksCount || recentLinks.length || 6}
+                        {analytics?.activeLinksCount ?? recentLinks.length}
                       </p>
                     )}
                     <div className="flex items-center gap-1 text-[11px] text-emerald-500 font-bold pt-1">
@@ -372,7 +357,7 @@ function DashboardContent() {
                       <Skeleton className="h-8 w-20" />
                     ) : (
                       <p className="text-3xl font-black text-slate-900 dark:text-white">
-                        {analytics?.averageCtr || 14.2}%
+                        {analytics?.averageCtr ?? 0}%
                       </p>
                     )}
                     <div className="flex items-center gap-1 text-[11px] text-emerald-500 font-bold pt-1">
@@ -716,3 +701,5 @@ export default function DashboardPage() {
     </Suspense>
   );
 }
+
+

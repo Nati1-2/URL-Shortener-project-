@@ -64,13 +64,15 @@ export class LinkService {
     };
   }
 
-  public async getLinkById(id: string, userId: string) {
+  public async getLinkById(id: string, userId?: string, workspaceId?: string) {
     const link = await prisma.link.findUnique({
       where: { id },
     });
 
     if (!link) throw new NotFoundError("Link not found");
-    if (link.createdBy !== userId) throw new ForbiddenError("You do not have access to this link.");
+    if (userId && link.createdBy !== userId && workspaceId && link.workspaceId !== workspaceId) {
+      throw new ForbiddenError("You do not have access to this link.");
+    }
     return this.formatLink(link);
   }
 

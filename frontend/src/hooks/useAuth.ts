@@ -9,15 +9,26 @@ export const AUTH_QUERY_KEYS = {
 };
 
 export function useCurrentUser() {
-  const { setUser } = useAuthStore();
+  const { setUser, setIsAuthenticated } = useAuthStore();
 
   return useQuery({
     queryKey: AUTH_QUERY_KEYS.me,
     queryFn: async () => {
-      const user = await authService.getCurrentUser();
-      if (user) setUser(user);
-      return user;
+      try {
+        const user = await authService.getCurrentUser();
+        if (user) {
+          setUser(user);
+          setIsAuthenticated(true);
+        }
+        return user;
+      } catch {
+        setUser(null);
+        setIsAuthenticated(false);
+        return null;
+      }
     },
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

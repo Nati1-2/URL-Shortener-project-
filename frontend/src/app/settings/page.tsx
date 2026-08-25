@@ -49,9 +49,16 @@ export default function SettingsPage() {
   const billingPortalMutation = useBillingPortal();
 
   // Profile Form State
-  const [name, setName] = useState(user?.name || "Alex Vance");
-  const [email, setEmail] = useState(user?.email || "alex.vance@acme.inc");
-  const [bio, setBio] = useState("Growth Lead & Marketing Engineer at Acme Inc.");
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [bio, setBio] = useState("Growth Lead & Marketing Engineer");
+
+  React.useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+    }
+  }, [user]);
 
   // Security Form State
   const [currentPassword, setCurrentPassword] = useState("");

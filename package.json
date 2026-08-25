@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "frontend"
+    "frontend",
+    "backend"
   ],
   "scripts": {
     "dev": "npm --prefix frontend run dev",
-    "dev:backend": "npm --prefix backend run dev:all",
-    "dev:all": "npx concurrently -k -n \"frontend,backend\" -c \"cyan,magenta\" \"npm --prefix frontend run dev\" \"npm --prefix backend run dev:all\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:all": "npx concurrently -k -n \"frontend,backend\" -c \"cyan,magenta\" \"npm --prefix frontend run dev\" \"npm --prefix backend run dev\"",
     "db:sync": "npm --prefix backend run db:sync",
     "db:migrate": "npm --prefix backend run db:migrate",
     "db:migrate:deploy": "npm --prefix backend run db:migrate:deploy",
@@ -19,4 +20,3 @@
     "lint": "npm --prefix frontend run lint"
   }
 }
-

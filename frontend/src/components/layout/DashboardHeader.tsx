@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useLogout } from "@/hooks/useAuth";
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/useNotifications";
 import { WorkspaceSwitcher } from "@/features/workspaces/WorkspaceSwitcher";
 import { Button } from "@/components/ui/Button";
@@ -25,7 +26,8 @@ import { BackendDiagnosticsModal } from "./BackendDiagnosticsModal";
 
 export const DashboardHeader: React.FC = () => {
   const { theme, toggleTheme } = useUIStore();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
+  const logoutMutation = useLogout();
   const { data: notifications } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
@@ -225,7 +227,7 @@ export const DashboardHeader: React.FC = () => {
                 <button
                   onClick={() => {
                     setShowUserMenu(false);
-                    logout();
+                    logoutMutation.mutate();
                   }}
                   className="w-full text-left px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
                 >

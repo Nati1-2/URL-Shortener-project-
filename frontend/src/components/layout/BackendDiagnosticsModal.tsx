@@ -34,7 +34,6 @@ export const BackendDiagnosticsModal: React.FC<BackendDiagnosticsModalProps> = (
   const { addToast } = useToastStore();
   const [isScanning, setIsScanning] = useState(false);
   const [services, setServices] = useState<ServiceHealthStatus[]>([]);
-  const [engineMode, setEngineMode] = useState<"live" | "mock" | "auto">("auto");
   const [activeGatewayHealth, setActiveGatewayHealth] = useState<{ healthy: boolean; latencyMs: number }>({
     healthy: false,
     latencyMs: 0,
@@ -58,28 +57,9 @@ export const BackendDiagnosticsModal: React.FC<BackendDiagnosticsModalProps> = (
 
   useEffect(() => {
     if (isOpen) {
-      if (typeof window !== "undefined") {
-        const saved = localStorage.getItem("linkpulse_engine_mode") as "live" | "mock" | null;
-        setEngineMode(saved || "auto");
-      }
       scanServices();
     }
   }, [isOpen]);
-
-  const handleToggleEngine = (mode: "live" | "mock" | "auto") => {
-    setEngineMode(mode);
-    ENV.setEngineMode(mode);
-    addToast({
-      type: "info",
-      title: `Engine Switched: ${mode.toUpperCase()}`,
-      message:
-        mode === "live"
-          ? "Frontend will route all requests directly to API Gateway & Microservices."
-          : mode === "mock"
-          ? "Frontend will use high-fidelity local state engine."
-          : "Frontend will auto-detect backend availability.",
-    });
-  };
 
   const healthyCount = services.filter((s) => s.status === "healthy").length;
 
@@ -137,53 +117,17 @@ export const BackendDiagnosticsModal: React.FC<BackendDiagnosticsModalProps> = (
           </Button>
         </div>
 
-        {/* Engine Mode Switcher Bar */}
-        <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-blue-500" />
-              Engine Operation Mode
+        {/* Live Status Bar */}
+        <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-blue-500" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Gateway Routing Architecture
             </span>
-            <span className="text-[11px] text-slate-400">Controls request routing priority</span>
           </div>
-
-          <div className="grid grid-cols-3 gap-2 pt-1">
-            <button
-              onClick={() => handleToggleEngine("auto")}
-              className={`p-2.5 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
-                engineMode === "auto"
-                  ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20"
-                  : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-500/40"
-              }`}
-            >
-              <div className="font-bold">Auto Smart Hybrid</div>
-              <div className="text-[10px] opacity-80">Live if available, fallback if not</div>
-            </button>
-
-            <button
-              onClick={() => handleToggleEngine("live")}
-              className={`p-2.5 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
-                engineMode === "live"
-                  ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20"
-                  : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-500/40"
-              }`}
-            >
-              <div className="font-bold">Enforce Live Backend</div>
-              <div className="text-[10px] opacity-80">Direct HTTP Gateway calls</div>
-            </button>
-
-            <button
-              onClick={() => handleToggleEngine("mock")}
-              className={`p-2.5 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
-                engineMode === "mock"
-                  ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20"
-                  : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-500/40"
-              }`}
-            >
-              <div className="font-bold">Local Engine Only</div>
-              <div className="text-[10px] opacity-80">Fast standalone offline mode</div>
-            </button>
-          </div>
+          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+            Port 8000 Reverse Proxy
+          </span>
         </div>
 
         {/* 9 Microservices Live Grid */}
