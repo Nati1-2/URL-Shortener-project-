@@ -8,7 +8,18 @@ const logger = createLogger("billing-service");
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
-const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const APP_URL = process.env.APP_URL || "http://localhost:3000";
+const PRICE_IDS: Record<string, string | undefined> = {
+  "pro:monthly": process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+  "pro:yearly": process.env.STRIPE_PRO_YEARLY_PRICE_ID,
+  "enterprise:monthly": process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID,
+  "enterprise:yearly": process.env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID,
+};
+
+function requireStripe(): Stripe {
+  if (!stripe) throw new BadRequestError("Billing is not configured. Set STRIPE_SECRET_KEY on the server.");
+  return stripe;
+}
 
 const stripe = STRIPE_SECRET_KEY
   ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2025-01-27.acacia" as any })
@@ -97,12 +108,12 @@ export class BillingService {
       sub = await prisma.subscription.create({
         data: {
           workspaceId,
-          planId: "pro",
-          planName: "Pro Growth Plan",
+          planId: "free",
+          planName: "Starter Hobby",
           status: "active",
-          monthlyClicksLimit: 50000,
-          usedClicksCurrentPeriod: 14230,
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          monthlyClicksLimit: 1000,
+          usedClicksCurrentPeriod: 0,
+          currentPeriodEnd: new Date(),
         },
       });
     }
@@ -123,93 +134,45 @@ export class BillingService {
   }
 
   public async createCheckoutSession(planId: string, isYearly: boolean, workspaceId: string = "ws_main") {
-    logger.info("Initiating checkout session", { planId, isYearly, workspaceId });
+    if (!["pro", "enterprise"].includes(planId)) throw new BadRequestError("Select a paid plan.");
+    const priceId = PRICE_IDS[`${planId}:${isYearly ? "yearly" : "monthly"}`];
+    if (!priceId) throw new BadRequestError("The selected Stripe price is not configured.");
 
-    if (planId === "free") {
-      throw new BadRequestError("Free plan does not require checkout.");
-    }
-
-    const priceAmount = planId === "enterprise" ? (isYearly ? 65 * 12 : 79) : isYearly ? 15 * 12 : 19;
-    const planName = planId === "enterprise" ? "Scale Enterprise Plan" : "Pro Growth Plan";
-
-    if (stripe) {
-      try {
-        const session = await stripe.checkout.sessions.create({
-          payment_method_types: ["card"],
-          mode: "subscription",
-          line_items: [
-            {
-              price_data: {
-                currency: "usd",
-                product_data: {
-                  name: `LinkPulse ${planName} (${isYearly ? "Annual" : "Monthly"})`,
-                  description: `High-velocity link shortening, custom domains, and real-time telemetry.`,
-                },
-                unit_amount: priceAmount * 100, // Cents
-                recurring: {
-                  interval: isYearly ? "year" : "month",
-                },
-              },
-              quantity: 1,
-            },
-          ],
-          metadata: {
-            workspaceId,
-            planId,
-            isYearly: String(isYearly),
-          },
-          success_url: `${APP_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}&plan=${planId}`,
-          cancel_url: `${APP_URL}/pricing?checkout=canceled`,
-        });
-
-        return { checkoutUrl: session.url || `${APP_URL}/dashboard?checkout=success&plan=${planId}` };
-      } catch (err: any) {
-        logger.error("Stripe checkout creation error:", err);
-      }
-    }
-
-    // Fallback if Stripe key is in test/mock mode
-    return {
-      checkoutUrl: `${APP_URL}/dashboard?checkout=success&plan=${planId}`,
-    };
+    const session = await requireStripe().checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      metadata: { workspaceId, planId, interval: isYearly ? "yearly" : "monthly" },
+      subscription_data: { metadata: { workspaceId, planId } },
+      success_url: `${APP_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${APP_URL}/pricing?checkout=canceled`,
+    });
+    if (!session.url) throw new BadRequestError("Stripe did not return a checkout URL.");
+    return { checkoutUrl: session.url };
   }
-
   public async openBillingPortal(workspaceId: string = "ws_main") {
-    logger.info("Opening customer billing portal", { workspaceId });
-
     const sub = await prisma.subscription.findUnique({ where: { workspaceId } });
-
-    if (stripe && sub?.stripeCustomerId) {
-      try {
-        const portal = await stripe.billingPortal.sessions.create({
-          customer: sub.stripeCustomerId,
-          return_url: `${APP_URL}/settings?tab=billing`,
-        });
-        return { portalUrl: portal.url };
-      } catch (err: any) {
-        logger.error("Stripe portal creation error:", err);
-      }
-    }
-
-    return {
-      portalUrl: `${APP_URL}/settings?tab=billing`,
-    };
+    if (!sub?.stripeCustomerId) throw new BadRequestError("No Stripe customer exists for this workspace.");
+    const portal = await requireStripe().billingPortal.sessions.create({
+      customer: sub.stripeCustomerId,
+      return_url: `${APP_URL}/settings?tab=billing`,
+    });
+    return { portalUrl: portal.url };
   }
-
   public async handleStripeWebhook(rawBody: Buffer | string, signature?: string) {
-    let event: any;
-
-    if (stripe && signature && STRIPE_WEBHOOK_SECRET) {
-      try {
-        event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
-      } catch (err: any) {
-        logger.error("Stripe Webhook Signature Verification Failed:", err.message);
-        throw new BadRequestError(`Webhook signature verification failed: ${err.message}`);
-      }
-    } else {
-      // Direct JSON parsing fallback if testing without live webhook secret
-      event = typeof rawBody === "string" ? JSON.parse(rawBody) : rawBody;
+    if (!signature || !STRIPE_WEBHOOK_SECRET) {
+      throw new BadRequestError("Stripe webhook signature configuration is missing.");
     }
+    let event: Stripe.Event;
+    try {
+      event = requireStripe().webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+    } catch (err: any) {
+      logger.error("Stripe webhook signature verification failed", err);
+      throw new BadRequestError("Webhook signature verification failed.");
+    }
+
+    const previous = await prisma.webhookEvent.findUnique({ where: { stripeEventId: event.id } });
+    if (previous) return { received: true, duplicate: true };
+    await prisma.webhookEvent.create({ data: { stripeEventId: event.id, type: event.type } });
 
     logger.info("Processing Stripe webhook event", { type: event.type });
 
@@ -230,6 +193,7 @@ export class BillingService {
           status: "active",
           stripeCustomerId: custId,
           stripeSubscriptionId: subId,
+          stripeCheckoutSessionId: session.id,
           monthlyClicksLimit: planId === "enterprise" ? 10000000 : 50000,
           currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
@@ -239,6 +203,7 @@ export class BillingService {
           status: "active",
           stripeCustomerId: custId,
           stripeSubscriptionId: subId,
+          stripeCheckoutSessionId: session.id,
           monthlyClicksLimit: planId === "enterprise" ? 10000000 : 50000,
           currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },

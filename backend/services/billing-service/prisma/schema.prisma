@@ -17,6 +17,8 @@ model Subscription {
   status                  String   @default("active") // active, trialing, past_due, canceled
   stripeCustomerId        String?
   stripeSubscriptionId    String?
+  stripePriceId           String?
+  stripeCheckoutSessionId String?
   monthlyClicksLimit      Int      @default(50000)
   usedClicksCurrentPeriod Int      @default(14230)
   currentPeriodEnd        DateTime
@@ -26,6 +28,7 @@ model Subscription {
 
   @@index([workspaceId])
   @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
 }
 
 model Invoice {
@@ -34,10 +37,20 @@ model Invoice {
   amount      Float
   currency    String   @default("USD")
   status      String   @default("paid")
-  invoiceUrl  String?
+  invoiceUrl          String?
+  stripeInvoiceId     String? @unique
+  stripePaymentIntentId String?
+  hostedInvoiceUrl    String?
   periodStart DateTime
   periodEnd   DateTime
   createdAt   DateTime @default(now())
 
   @@index([workspaceId])
+}
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  stripeEventId String @unique
+  type        String
+  processedAt DateTime @default(now())
 }

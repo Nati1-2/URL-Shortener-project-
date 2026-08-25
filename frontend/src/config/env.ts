@@ -1,6 +1,6 @@
 /**
  * Application environment configuration.
- * Safely exposes environment variables with fallbacks and runtime override.
+ * Safely exposes client-safe environment variables. Mock mode is intentionally disabled.
  */
 
 export const ENV = {
@@ -8,24 +8,11 @@ export const ENV = {
   IS_PRODUCTION: process.env.NODE_ENV === "production",
   IS_DEVELOPMENT: process.env.NODE_ENV === "development",
 
-  get USE_MOCK_API(): boolean {
-    if (typeof window !== "undefined") {
-      const override = localStorage.getItem("linkpulse_engine_mode");
-      if (override === "mock") return true;
-      if (override === "live") return false;
-    }
-    return process.env.NEXT_PUBLIC_USE_MOCK_API === "true" || !process.env.NEXT_PUBLIC_API_GATEWAY_URL;
-  },
+  // Production builds never substitute fake data for failed API calls.
+  USE_MOCK_API: false,
 
-  setEngineMode(mode: "live" | "mock" | "auto") {
-    if (typeof window !== "undefined") {
-      if (mode === "auto") {
-        localStorage.removeItem("linkpulse_engine_mode");
-      } else {
-        localStorage.setItem("linkpulse_engine_mode", mode);
-      }
-      window.dispatchEvent(new CustomEvent("linkpulse:engine_mode_changed", { detail: mode }));
-    }
+  setEngineMode(_mode: "live" | "mock" | "auto") {
+    // Retained for backward compatibility with the diagnostics UI. Mock mode is disabled.
   },
 
   APP_URL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",

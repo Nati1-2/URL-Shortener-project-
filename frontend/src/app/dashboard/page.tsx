@@ -78,12 +78,12 @@ function DashboardContent() {
 
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
-      setCheckoutSuccess(true);
+      setCheckoutSuccess(false);
       const plan = searchParams.get("plan") || "Pro";
       addToast({
         type: "success",
-        title: "Payment Successful!",
-        message: `Welcome to LinkPulse ${plan.charAt(0).toUpperCase() + plan.slice(1)}! Your account limits have been instantly updated.`,
+        title: "Checkout received",
+        message: "Your plan will update after Stripe sends a verified webhook.",
       });
       confetti({
         particleCount: 100,

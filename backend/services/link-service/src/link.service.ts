@@ -9,6 +9,7 @@ import {
   NotFoundError,
   BadRequestError,
   ConflictError,
+  ForbiddenError,
 } from "@linkpulse/common";
 import { eventBroker, EVENT_TOPICS } from "@linkpulse/events";
 import { createLogger } from "@linkpulse/logger";
@@ -63,15 +64,13 @@ export class LinkService {
     };
   }
 
-  public async getLinkById(id: string) {
+  public async getLinkById(id: string, userId: string) {
     const link = await prisma.link.findUnique({
       where: { id },
     });
 
-    if (!link) {
-      throw new NotFoundError("Link not found");
-    }
-
+    if (!link) throw new NotFoundError("Link not found");
+    if (link.createdBy !== userId) throw new ForbiddenError("You do not have access to this link.");
     return this.formatLink(link);
   }
 
@@ -189,9 +188,10 @@ export class LinkService {
     return this.formatLink(link);
   }
 
-  public async updateLink(id: string, updates: any) {
+  public async updateLink(id: string, updates: any, userId: string) {
     const existing = await prisma.link.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("Link not found");
+    if (existing.createdBy !== userId) throw new ForbiddenError("You do not have access to this link.");
 
     const data: any = {};
     if (updates.title !== undefined) data.title = updates.title;
@@ -225,9 +225,10 @@ export class LinkService {
     return this.formatLink(updated);
   }
 
-  public async deleteLink(id: string) {
+  public async deleteLink(id: string, userId: string) {
     const existing = await prisma.link.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("Link not found");
+    if (existing.createdBy !== userId) throw new ForbiddenError("You do not have access to this link.");
 
     await prisma.link.delete({ where: { id } });
 
@@ -255,13 +256,13 @@ export class LinkService {
     logger.info("Short link deleted", { linkId: id, shortCode: existing.shortCode });
   }
 
-  public async bulkDeleteLinks(ids: string[]) {
+  public async bulkDeleteLinks(ids: string[], userId: string) {
     const links = await prisma.link.findMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ids }, createdBy: userId },
     });
 
     await prisma.link.deleteMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ids }, createdBy: userId },
     });
 
     // Invalidate Caches
@@ -281,9 +282,10 @@ export class LinkService {
     return { available: !existing };
   }
 
-  public async getLinkStats(id: string) {
+  public async getLinkStats(id: string, userId: string) {
     const link = await prisma.link.findUnique({ where: { id } });
     if (!link) throw new NotFoundError("Link not found");
+    if (link.createdBy !== userId) throw new ForbiddenError("You do not have access to this link.");
 
     return {
       linkId: link.id,
