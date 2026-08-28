@@ -188,7 +188,7 @@ class ApiClient {
       if (err instanceof DOMException && err.name === "AbortError") {
         throw {
           status: 408,
-          message: `Request timed out after ${timeoutMs}ms`,
+          message: `Request timed out after ${timeoutMs}ms. Backend server at ${this.baseUrl} is not responding.`,
           code: "TIMEOUT",
           requestId,
         } as ApiError;
@@ -199,9 +199,24 @@ class ApiClient {
         throw err;
       }
 
+      const isNetworkError =
+        err instanceof TypeError ||
+        (err instanceof Error &&
+          (err.message === "Failed to fetch" ||
+            err.message.includes("NetworkError") ||
+            err.message.includes("fetch failed") ||
+            err.message.includes("Load failed") ||
+            err.message.includes("Failed to load")));
+
+      const message = isNetworkError
+        ? `Backend API unreachable (${this.baseUrl}). Please ensure backend services are running or verify NEXT_PUBLIC_API_GATEWAY_URL.`
+        : err instanceof Error
+        ? err.message
+        : "Failed to communicate with API Gateway";
+
       throw {
-        status: 500,
-        message: err instanceof Error ? err.message : "Failed to communicate with API Gateway",
+        status: 503,
+        message,
         code: "NETWORK_ERROR",
         requestId,
       } as ApiError;
