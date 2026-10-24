@@ -33,10 +33,10 @@ export const billingService = {
     }));
   },
 
-  async createCheckoutSession(planId: string, isYearly: boolean): Promise<{ checkoutUrl: string }> {
+  async createCheckoutSession(planId: string, isYearly: boolean, customerEmail?: string): Promise<{ checkoutUrl: string }> {
     const res = await apiClient.post<ApiResponse<{ checkoutUrl: string }>>(
       API_ROUTES.BILLING.CHECKOUT,
-      { planId, isYearly }
+      { planId, isYearly, customerEmail }
     );
     return res.data;
   },
@@ -49,8 +49,8 @@ export const billingService = {
     return res.data;
   },
 
-  async openBillingPortal(): Promise<{ portalUrl: string }> {
-    const res = await apiClient.post<ApiResponse<{ portalUrl: string }>>(API_ROUTES.BILLING.PORTAL);
+  async openBillingPortal(customerEmail?: string): Promise<{ portalUrl: string }> {
+    const res = await apiClient.post<ApiResponse<{ portalUrl: string }>>(API_ROUTES.BILLING.PORTAL, { customerEmail });
     return res.data;
   },
 };
