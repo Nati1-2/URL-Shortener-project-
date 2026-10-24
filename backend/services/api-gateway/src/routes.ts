@@ -79,6 +79,17 @@ export function setupProxyRoutes(app: Express) {
   );
 
   // 7. Billing & Stripe Subscription Routes
+  // 7a. Stripe Webhook (Unauthenticated for Stripe server calls)
+  app.use(
+    ["/api/v1/billing/webhook", "/billing/webhook"],
+    createProxyMiddleware({
+      target: BILLING_SERVICE_URL,
+      changeOrigin: true,
+      pathRewrite: (path) => (path.startsWith("/api/v1/billing") ? path : `/api/v1${path}`),
+    })
+  );
+
+  // 7b. Protected Billing Endpoints
   app.use(
     ["/api/v1/billing", "/billing"],
     authGuard,

@@ -146,8 +146,8 @@ class ApiClient {
       if (!response.ok) {
         const apiError: ApiError = {
           status: response.status,
-          message: responseData?.message || response.statusText || "An unexpected error occurred",
-          code: responseData?.code || `HTTP_${response.status}`,
+          message: responseData?.error?.message || responseData?.message || response.statusText || "An unexpected error occurred",
+          code: responseData?.error?.code || responseData?.code || `HTTP_${response.status}`,
           errors: responseData?.errors,
           requestId,
         };

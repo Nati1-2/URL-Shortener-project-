@@ -88,6 +88,51 @@ export class AuthController {
       next(err);
     }
   }
+
+  public async updateProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req as any).user?.id || req.headers["x-user-id"];
+      if (!userId) {
+        return res.status(401).json({ success: false, error: { code: "UNAUTHORIZED", message: "Missing user session" } });
+      }
+      const { name, avatarUrl, email } = req.body;
+      const updatedUser = await authService.updateProfile(String(userId), { name, avatarUrl, email });
+      return res.status(200).json(successResponse(updatedUser, "Profile updated successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async users(req: Request, res: Response, next: NextFunction) {
+    try {
+      const usersList = await authService.getAllUsers();
+      return res.status(200).json(successResponse(usersList));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async updateUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { role, status } = req.body;
+      const updated = await authService.updateUserRoleOrStatus(id, { role, status });
+      return res.status(200).json(successResponse(updated, "User updated successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async deleteUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      await authService.deleteUser(id);
+      return res.status(200).json(successResponse(null, "User deleted successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const authController = new AuthController();
+

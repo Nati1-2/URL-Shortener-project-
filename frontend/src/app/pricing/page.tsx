@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { usePricingPlans, useCheckout } from "@/hooks/useBilling";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   RevealOnScroll,
   StaggerGroup,
@@ -15,6 +16,7 @@ import {
 } from "@/components/animation/ScrollReveal";
 
 export default function PricingPage() {
+  const { user } = useAuthStore();
   const [isYearly, setIsYearly] = useState(true);
   const { data: plans } = usePricingPlans();
   const checkoutMutation = useCheckout();
@@ -34,7 +36,7 @@ export default function PricingPage() {
 
   const handleSelectPlan = (planId: string) => {
     if (planId === "free") return;
-    checkoutMutation.mutate({ planId, isYearly });
+    checkoutMutation.mutate({ planId, isYearly, customerEmail: user?.email });
   };
 
   return (

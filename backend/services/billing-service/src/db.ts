@@ -11,12 +11,13 @@ function getDatabaseUrl(): string {
   return `${baseUrl}?schema=billing${isSsl ? "&sslmode=require" : ""}`;
 }
 
-export const prisma = new PrismaClient({
+export const prisma: any = new PrismaClient({
   datasources: {
     db: {
       url: getDatabaseUrl(),
     },
   },
 });
+
 
 

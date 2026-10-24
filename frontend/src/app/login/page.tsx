@@ -14,7 +14,7 @@ export default function LoginPage() {
   const { addToast } = useToastStore();
 
   const [email, setEmail] = useState("alex.vance@acme.inc");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState("Password123!");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
@@ -73,7 +73,7 @@ export default function LoginPage() {
               Sign in to your workspace
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Access your short link vault and real-time telemetry.
+              Access your short link vault & telemetry. Demo: <span className="font-mono text-blue-500 font-bold">alex.vance@acme.inc / Password123!</span>
             </p>
           </div>
         </RevealOnScroll>

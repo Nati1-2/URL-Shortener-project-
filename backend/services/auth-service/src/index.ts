@@ -33,11 +33,17 @@ router.post("/login", authController.login);
 router.post("/refresh", authController.refresh);
 router.post("/logout", authController.logout);
 router.get("/me", authController.me);
+router.patch("/me", authController.updateProfile);
+router.patch("/profile", authController.updateProfile);
 router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password", authController.resetPassword);
+router.get("/users", authController.users);
+router.patch("/users/:id", authController.updateUser);
+router.delete("/users/:id", authController.deleteUser);
 
 app.use("/api/v1/auth", router);
 app.use("/auth", router); // Direct fallback
+
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

@@ -263,6 +263,77 @@ export class AuthService {
 
     logger.info(`Password successfully reset for userId: ${resetRecord.userId}`);
   }
+
+  public async updateProfile(userId: string, input: { name?: string; avatarUrl?: string; email?: string }) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundError("User not found");
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(input.name ? { name: input.name } : {}),
+        ...(input.avatarUrl ? { avatarUrl: input.avatarUrl } : {}),
+        ...(input.email ? { email: input.email.toLowerCase() } : {}),
+      },
+    });
+
+    return {
+      id: updated.id,
+      email: updated.email,
+      name: updated.name,
+      avatar: updated.avatarUrl,
+      role: updated.role,
+      emailVerified: updated.emailVerified,
+      createdAt: updated.createdAt.toISOString(),
+    };
+  }
+
+  public async getAllUsers() {
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    return users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      avatar: u.avatarUrl,
+      role: u.role,
+      status: u.status,
+      emailVerified: u.emailVerified,
+      createdAt: u.createdAt.toISOString(),
+      lastLoginAt: u.lastLoginAt?.toISOString() || null,
+    }));
+  }
+
+  public async updateUserRoleOrStatus(userId: string, input: { role?: string; status?: string }) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundError("User not found");
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(input.role ? { role: input.role } : {}),
+        ...(input.status ? { status: input.status } : {}),
+      },
+    });
+
+    return {
+      id: updated.id,
+      email: updated.email,
+      name: updated.name,
+      role: updated.role,
+      status: updated.status,
+    };
+  }
+
+  public async deleteUser(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundError("User not found");
+
+    await prisma.user.delete({ where: { id: userId } });
+  }
 }
 
 export const authService = new AuthService();
+

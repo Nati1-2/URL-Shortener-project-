@@ -22,11 +22,21 @@ export class BillingController {
     }
   }
 
+  public async getInvoices(req: Request, res: Response, next: NextFunction) {
+    try {
+      const workspaceId = (req.query.workspaceId as string) || (req.headers["x-workspace-id"] as string) || "ws_main";
+      const invoices = await billingService.getInvoices(workspaceId);
+      return res.status(200).json(successResponse(invoices));
+    } catch (err) {
+      next(err);
+    }
+  }
+
   public async checkout(req: Request, res: Response, next: NextFunction) {
     try {
-      const { planId, isYearly } = req.body;
+      const { planId, isYearly, customerEmail } = req.body;
       const workspaceId = (req.headers["x-workspace-id"] as string) || "ws_main";
-      const result = await billingService.createCheckoutSession(planId, isYearly, workspaceId);
+      const result = await billingService.createCheckoutSession(planId, isYearly, workspaceId, customerEmail);
       return res.status(200).json(successResponse(result));
     } catch (err) {
       next(err);
@@ -35,8 +45,9 @@ export class BillingController {
 
   public async portal(req: Request, res: Response, next: NextFunction) {
     try {
+      const { customerEmail } = req.body || {};
       const workspaceId = (req.headers["x-workspace-id"] as string) || "ws_main";
-      const result = await billingService.openBillingPortal(workspaceId);
+      const result = await billingService.openBillingPortal(workspaceId, customerEmail);
       return res.status(200).json(successResponse(result));
     } catch (err) {
       next(err);
@@ -49,6 +60,17 @@ export class BillingController {
       const signature = req.headers["stripe-signature"] as string | undefined;
       const result = await billingService.handleStripeWebhook(rawBody, signature);
       return res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async validate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { sessionId, planId } = req.body;
+      const workspaceId = (req.headers["x-workspace-id"] as string) || "ws_main";
+      const result = await billingService.validateCheckoutSession(sessionId, planId, workspaceId);
+      return res.status(200).json(successResponse(result));
     } catch (err) {
       next(err);
     }

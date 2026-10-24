@@ -36,8 +36,10 @@ app.get("/ready", (req, res) => res.status(200).json({ status: "ready", service:
 const router = express.Router();
 router.get("/plans", billingController.getPlans);
 router.get("/subscription", billingController.getSubscription);
+router.get("/invoices", billingController.getInvoices);
 router.post("/checkout", billingController.checkout);
 router.post("/portal", billingController.portal);
+router.post("/validate", billingController.validate);
 router.post("/webhook", billingController.webhook);
 
 app.use("/api/v1/billing", router);

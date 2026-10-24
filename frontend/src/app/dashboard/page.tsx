@@ -39,6 +39,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ServiceErrorBoundary } from "@/components/error/ServiceErrorBoundary";
 import { useLinks, useCreateLink } from "@/hooks/useLinks";
 import { useOverviewAnalytics, useClickTimeline, useDeviceAnalytics } from "@/hooks/useAnalytics";
+import { useValidateCheckout } from "@/hooks/useBilling";
 import { useToastStore } from "@/store/useToastStore";
 import { formatNumber, formatDate, truncateUrl } from "@/lib/utils";
 import { Link as LinkType } from "@/types";
@@ -64,6 +65,7 @@ import {
 function DashboardContent() {
   const { addToast } = useToastStore();
   const searchParams = useSearchParams();
+  const validateCheckoutMutation = useValidateCheckout();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
 
@@ -79,11 +81,15 @@ function DashboardContent() {
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
       setCheckoutSuccess(true);
-      const plan = searchParams.get("plan") || "Pro";
+      const plan = searchParams.get("plan") || "pro";
+      const sessionId = searchParams.get("session_id") || "success";
+
+      validateCheckoutMutation.mutate({ sessionId, planId: plan });
+
       addToast({
         type: "success",
-        title: "Payment Successful!",
-        message: `Welcome to LinkPulse ${plan.charAt(0).toUpperCase() + plan.slice(1)}! Your account limits have been instantly updated.`,
+        title: "Payment & Plan Validated!",
+        message: `Welcome to LinkPulse ${plan.charAt(0).toUpperCase() + plan.slice(1)}! Your workspace subscription and click limits have been updated.`,
       });
       confetti({
         particleCount: 100,
@@ -467,7 +473,7 @@ function DashboardContent() {
                             paddingAngle={4}
                             dataKey="value"
                           >
-                            {deviceData?.map((entry, index) => (
+                            {deviceData?.map((entry: any, index: number) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
@@ -484,7 +490,7 @@ function DashboardContent() {
                       </ResponsiveContainer>
                     </div>
                     <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      {deviceData?.map((d) => (
+                      {deviceData?.map((d: any) => (
                         <div key={d.name} className="flex items-center justify-between text-xs font-semibold">
                           <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
@@ -551,7 +557,7 @@ function DashboardContent() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
-                      {recentLinks.map((link) => (
+                      {recentLinks.map((link: LinkType) => (
                         <tr key={link.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/60 transition-colors">
                           <td className="py-3.5 px-4">
                             <div className="space-y-0.5">

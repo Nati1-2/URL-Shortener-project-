@@ -60,6 +60,45 @@ export default function LinkDetailsPage({
   const { data: timelineData, isLoading: isTimelineLoading } = useClickTimeline({ linkId });
   const { data: geoData } = useGeographyAnalytics({ linkId });
 
+  const handleDownloadQrSvg = () => {
+    const svgElement = document.getElementById("details-qr-svg");
+    if (!svgElement) return;
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const linkEl = document.createElement("a");
+    linkEl.href = url;
+    linkEl.download = `qrcode-${link?.shortCode || "shortlink"}.svg`;
+    linkEl.click();
+    URL.revokeObjectURL(url);
+    addToast({ type: "success", title: "Downloaded Vector QR SVG" });
+  };
+
+  const handleDownloadQrPng = () => {
+    const svgElement = document.getElementById("details-qr-svg");
+    if (!svgElement) return;
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = 512;
+      canvas.height = 512;
+      if (ctx) {
+        ctx.fillStyle = link?.qrSettings?.bgColor || "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, 512, 512);
+      }
+      const pngUrl = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.href = pngUrl;
+      downloadLink.download = `qrcode-${link?.shortCode || "shortlink"}.png`;
+      downloadLink.click();
+      addToast({ type: "success", title: "Downloaded High-Res QR PNG" });
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
   const [copied, setCopied] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -231,14 +270,31 @@ export default function LinkDetailsPage({
                 </h3>
 
                 <div className="p-4 bg-white rounded-3xl border border-slate-200 shadow-md inline-block">
-                  <QRCodeSVG value={`https://${link.shortUrl}`} size={160} level="H" />
+                  <QRCodeSVG
+                    id="details-qr-svg"
+                    value={`https://${link.shortUrl}`}
+                    size={160}
+                    level="H"
+                    fgColor={link.qrSettings?.fgColor || "#0f172a"}
+                    bgColor={link.qrSettings?.bgColor || "#ffffff"}
+                  />
                 </div>
 
                 <div className="flex items-center justify-center gap-2">
-                  <Button variant="outline" size="sm" leftIcon={<Download className="w-3.5 h-3.5" />}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadQrPng}
+                    leftIcon={<Download className="w-3.5 h-3.5" />}
+                  >
                     Download PNG
                   </Button>
-                  <Button variant="outline" size="sm" leftIcon={<Download className="w-3.5 h-3.5" />}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadQrSvg}
+                    leftIcon={<Download className="w-3.5 h-3.5" />}
+                  >
                     Download SVG
                   </Button>
                 </div>

@@ -27,7 +27,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useWorkspaceMembers, useInviteMember } from "@/hooks/useWorkspaces";
 import { useDomains, useAddDomain, useVerifyDomain } from "@/hooks/useDomains";
-import { useSubscription, useCheckout, useBillingPortal } from "@/hooks/useBilling";
+import { useSubscription, useCheckout, useBillingPortal, useInvoices } from "@/hooks/useBilling";
 import { Role } from "@/types";
 import { RevealOnScroll } from "@/components/animation/ScrollReveal";
 
@@ -45,6 +45,7 @@ export default function SettingsPage() {
   const addDomainMutation = useAddDomain();
   const verifyDomainMutation = useVerifyDomain();
   const { data: subscription } = useSubscription(activeWorkspaceId);
+  const { data: invoices } = useInvoices(activeWorkspaceId);
   const checkoutMutation = useCheckout();
   const billingPortalMutation = useBillingPortal();
 
@@ -480,7 +481,7 @@ export default function SettingsPage() {
                       <Button
                         variant="outline"
                         size="md"
-                        onClick={() => billingPortalMutation.mutate()}
+                        onClick={() => billingPortalMutation.mutate(email)}
                         isLoading={billingPortalMutation.isPending}
                         leftIcon={<CreditCard className="w-4 h-4" />}
                       >
@@ -491,14 +492,22 @@ export default function SettingsPage() {
                         size="md"
                         onClick={() => {
                           if (subscription?.planId === "enterprise") {
-                            billingPortalMutation.mutate();
+                            billingPortalMutation.mutate(email);
                           } else {
-                            checkoutMutation.mutate({ planId: "enterprise", isYearly: true });
+                            checkoutMutation.mutate({
+                              planId: subscription?.planId === "free" ? "pro" : "enterprise",
+                              isYearly: true,
+                              customerEmail: email,
+                            });
                           }
                         }}
                         isLoading={checkoutMutation.isPending}
                       >
-                        {subscription?.planId === "enterprise" ? "Manage Plan" : "Upgrade to Enterprise"}
+                        {subscription?.planId === "enterprise"
+                          ? "Manage Enterprise Plan"
+                          : subscription?.planId === "free"
+                          ? "Upgrade to Pro ($15/mo)"
+                          : "Upgrade to Enterprise ($65/mo)"}
                       </Button>
                     </div>
                   </div>
@@ -507,14 +516,14 @@ export default function SettingsPage() {
                     <div className="flex justify-between font-semibold">
                       <span>Monthly Click Limit Usage</span>
                       <span className="text-blue-500">
-                        {(subscription?.usedClicksCurrentPeriod ?? 14230).toLocaleString()} / {(subscription?.monthlyClicksLimit ?? 50000).toLocaleString()} Clicks ({Math.round(((subscription?.usedClicksCurrentPeriod ?? 14230) / (subscription?.monthlyClicksLimit ?? 50000)) * 100)}%)
+                        {(subscription?.usedClicksCurrentPeriod ?? 0).toLocaleString()} / {(subscription?.monthlyClicksLimit ?? 50000).toLocaleString()} Clicks ({Math.round(((subscription?.usedClicksCurrentPeriod ?? 0) / (subscription?.monthlyClicksLimit ?? 50000)) * 100)}%)
                       </span>
                     </div>
                     <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-brand-gradient rounded-full"
                         style={{
-                          width: `${Math.min(100, Math.round(((subscription?.usedClicksCurrentPeriod ?? 14230) / (subscription?.monthlyClicksLimit ?? 50000)) * 100))}%`,
+                          width: `${Math.min(100, Math.round(((subscription?.usedClicksCurrentPeriod ?? 0) / (subscription?.monthlyClicksLimit ?? 50000)) * 100))}%`,
                         }}
                       />
                     </div>
@@ -529,31 +538,42 @@ export default function SettingsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => billingPortalMutation.mutate()}
+                      onClick={() => billingPortalMutation.mutate(email)}
                       className="text-xs text-blue-500 hover:text-blue-600"
                     >
                       View all in Stripe →
                     </Button>
                   </div>
                   <div className="space-y-2 text-xs">
-                    {[
-                      { id: "inv_101", date: "Aug 01, 2026", amount: "$19.00", status: "Paid" },
-                      { id: "inv_100", date: "Jul 01, 2026", amount: "$19.00", status: "Paid" },
-                    ].map((inv) => (
-                      <div
-                        key={inv.id}
-                        className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-between"
-                      >
-                        <div className="space-y-0.5">
-                          <p className="font-bold text-slate-900 dark:text-white">Pro Plan Subscription</p>
-                          <p className="text-[10px] text-slate-400">{inv.date}</p>
+                    {(invoices && invoices.length > 0) ? (
+                      invoices.map((inv) => (
+                        <div
+                          key={inv.id}
+                          className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-between"
+                        >
+                          <div className="space-y-0.5">
+                            <p className="font-bold text-slate-900 dark:text-white">Subscription Invoice</p>
+                            <p className="text-[10px] text-slate-400">{inv.date}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-slate-900 dark:text-white">{inv.amount}</span>
+                            <Badge variant={inv.status === "Paid" ? "success" : "warning"}>{inv.status}</Badge>
+                            {inv.pdfUrl && (
+                              <a
+                                href={inv.pdfUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-500 hover:underline text-[11px]"
+                              >
+                                PDF
+                              </a>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-slate-900 dark:text-white">{inv.amount}</span>
-                          <Badge variant="success">{inv.status}</Badge>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className="text-slate-400 py-2">No invoices found for this workspace.</p>
+                    )}
                   </div>
                 </Card>
               </div>

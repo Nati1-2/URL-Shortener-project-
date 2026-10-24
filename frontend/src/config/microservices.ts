@@ -48,7 +48,9 @@ export const API_ROUTES = {
   BILLING: {
     PLANS: "/billing/plans",
     SUBSCRIPTION: "/billing/subscription",
+    INVOICES: "/billing/invoices",
     CHECKOUT: "/billing/checkout",
+    VALIDATE: "/billing/validate",
     PORTAL: "/billing/portal",
     USAGE: "/billing/usage",
   },
