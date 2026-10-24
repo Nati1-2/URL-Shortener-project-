@@ -1,33 +1,21 @@
 import { create } from "zustand";
 
 interface ThemeState {
-  theme: "dark" | "light";
+  theme: "dark";
   toggleTheme: () => void;
-  setTheme: (theme: "dark" | "light") => void;
+  setTheme: (theme: "dark") => void;
 }
 
-export const useThemeStore = create<ThemeState>((set) => ({
-  theme: "dark", // default dark SaaS theme
-  toggleTheme: () =>
-    set((state) => {
-      const nextTheme = state.theme === "dark" ? "light" : "dark";
-      if (typeof window !== "undefined") {
-        if (nextTheme === "dark") {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      }
-      return { theme: nextTheme };
-    }),
-  setTheme: (theme) => {
+export const useThemeStore = create<ThemeState>(() => ({
+  theme: "dark",
+  toggleTheme: () => {
     if (typeof window !== "undefined") {
-      if (theme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
+      document.documentElement.classList.add("dark");
     }
-    set({ theme });
+  },
+  setTheme: () => {
+    if (typeof window !== "undefined") {
+      document.documentElement.classList.add("dark");
+    }
   },
 }));

@@ -6,8 +6,6 @@ import {
   Search,
   Plus,
   Bell,
-  Sun,
-  Moon,
   CheckCircle2,
   ExternalLink,
   ChevronDown,
@@ -15,7 +13,6 @@ import {
   Radio,
   Server,
 } from "lucide-react";
-import { useUIStore } from "@/store/useUIStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLogout } from "@/hooks/useAuth";
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/useNotifications";
@@ -25,7 +22,6 @@ import { apiClient } from "@/services/api-client";
 import { BackendDiagnosticsModal } from "./BackendDiagnosticsModal";
 
 export const DashboardHeader: React.FC = () => {
-  const { theme, toggleTheme } = useUIStore();
   const { user } = useAuthStore();
   const logoutMutation = useLogout();
   const { data: notifications } = useNotifications();
@@ -171,14 +167,6 @@ export const DashboardHeader: React.FC = () => {
             )}
           </div>
 
-          {/* Theme Switcher */}
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors cursor-pointer"
-            title="Toggle theme"
-          >
-            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
 
           {/* User Pill */}
           <div className="relative" ref={userMenuRef}>

@@ -3,15 +3,13 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Link2, Sun, Moon, ArrowRight, Menu, X } from "lucide-react";
+import { Link2, ArrowRight, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useThemeStore } from "@/store/useThemeStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/Button";
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useThemeStore();
   const { isAuthenticated } = useAuthStore();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -92,13 +90,6 @@ export const Navbar: React.FC = () => {
 
         {/* Right Actions */}
         <div className="hidden md:flex items-center gap-3">
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-xl text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200/80 dark:border-slate-800 shadow-sm cursor-pointer"
-            title="Toggle theme"
-          >
-            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
 
           {isAuthenticated ? (
             <Link href="/dashboard">
@@ -134,12 +125,6 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Menu Trigger */}
         <div className="flex md:hidden items-center gap-2">
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-xl text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 cursor-pointer"
-          >
-            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-xl text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 cursor-pointer"

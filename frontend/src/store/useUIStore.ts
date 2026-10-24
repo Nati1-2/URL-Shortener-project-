@@ -4,13 +4,13 @@ import { persist } from "zustand/middleware";
 interface UIState {
   sidebarCollapsed: boolean;
   activeWorkspaceId: string;
-  theme: "dark" | "light";
+  theme: "dark";
   searchModalOpen: boolean;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setActiveWorkspaceId: (workspaceId: string) => void;
   toggleTheme: () => void;
-  setTheme: (theme: "dark" | "light") => void;
+  setTheme: (theme: "dark") => void;
   setSearchModalOpen: (open: boolean) => void;
 }
 
@@ -24,27 +24,15 @@ export const useUIStore = create<UIState>()(
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
       setActiveWorkspaceId: (workspaceId) => set({ activeWorkspaceId: workspaceId }),
-      toggleTheme: () =>
-        set((state) => {
-          const next = state.theme === "dark" ? "light" : "dark";
-          if (typeof document !== "undefined") {
-            if (next === "dark") {
-              document.documentElement.classList.add("dark");
-            } else {
-              document.documentElement.classList.remove("dark");
-            }
-          }
-          return { theme: next };
-        }),
-      setTheme: (theme) => {
+      toggleTheme: () => {
         if (typeof document !== "undefined") {
-          if (theme === "dark") {
-            document.documentElement.classList.add("dark");
-          } else {
-            document.documentElement.classList.remove("dark");
-          }
+          document.documentElement.classList.add("dark");
         }
-        set({ theme });
+      },
+      setTheme: () => {
+        if (typeof document !== "undefined") {
+          document.documentElement.classList.add("dark");
+        }
       },
       setSearchModalOpen: (open) => set({ searchModalOpen: open }),
     }),

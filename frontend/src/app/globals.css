@@ -4,16 +4,17 @@
 
 @layer base {
   :root {
-    --background: #f8fafc;
-    --foreground: #090d16;
-    --card: #ffffff;
-    --card-foreground: #090d16;
-    --popover: #ffffff;
-    --popover-foreground: #090d16;
-    --primary: #2563eb;
+    --background: #080c14;
+    --foreground: #f8fafc;
+    --card: #0d1424;
+    --card-foreground: #f8fafc;
+    --popover: #0d1424;
+    --popover-foreground: #f8fafc;
+    --primary: #3b82f6;
     --primary-foreground: #ffffff;
-    --border: #e2e8f0;
+    --border: rgba(255, 255, 255, 0.08);
     --radius: 0.875rem;
+    color-scheme: dark;
   }
 
   .dark {
@@ -26,6 +27,7 @@
     --primary: #3b82f6;
     --primary-foreground: #ffffff;
     --border: rgba(255, 255, 255, 0.08);
+    color-scheme: dark;
   }
 
   * {
@@ -64,11 +66,11 @@
 
 /* Multi-depth Premium Glassmorphism */
 .glass-card {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(13, 20, 36, 0.78);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 4px 24px -2px rgba(15, 23, 42, 0.05), 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
 }
 
 .dark .glass-card {
@@ -88,8 +90,8 @@
 
 .glass-card-hover:hover {
   transform: translateY(-4px);
-  border-color: rgba(37, 99, 235, 0.35);
-  box-shadow: 0 16px 36px -10px rgba(37, 99, 235, 0.12), 0 4px 12px 0 rgba(15, 23, 42, 0.05);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 20px 45px -12px rgba(59, 130, 246, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
 }
 
 .dark .glass-card-hover:hover {
@@ -99,7 +101,7 @@
 
 /* High-Contrast Gradient Typography */
 .text-gradient {
-  background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 45%, #7e22ce 100%);
+  background: linear-gradient(135deg, #38bdf8 0%, #6366f1 45%, #c084fc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -111,7 +113,7 @@
 }
 
 .text-gradient-gold {
-  background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%);
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
