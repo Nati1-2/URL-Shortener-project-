@@ -36,7 +36,11 @@ export default function PricingPage() {
 
   const handleSelectPlan = (planId: string) => {
     if (planId === "free") return;
-    checkoutMutation.mutate({ planId, isYearly, customerEmail: user?.email });
+    if (!user) {
+      window.location.href = `/login?next=${encodeURIComponent("/pricing")}`;
+      return;
+    }
+    checkoutMutation.mutate({ planId, isYearly, customerEmail: user.email });
   };
 
   return (
