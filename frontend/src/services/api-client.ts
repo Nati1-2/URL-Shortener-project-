@@ -109,6 +109,20 @@ class ApiClient {
     return results;
   }
 
+  private getActiveWorkspaceId(): string | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const uiRaw = localStorage.getItem("linkpulse_ui_store");
+      if (uiRaw) {
+        const parsed = JSON.parse(uiRaw);
+        return parsed?.state?.activeWorkspaceId || null;
+      }
+    } catch {
+      // ignore parsing error
+    }
+    return null;
+  }
+
   public async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
     const { timeoutMs = ENV.DEFAULT_TIMEOUT_MS, params, headers, ...restOptions } = options;
 
@@ -116,6 +130,7 @@ class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const token = this.getAuthToken();
+    const workspaceId = this.getActiveWorkspaceId();
     const requestId = `req_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
 
     const requestHeaders: Record<string, string> = {
@@ -123,6 +138,7 @@ class ApiClient {
       "Accept": "application/json",
       "x-request-id": requestId,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
       ...(headers as Record<string, string>),
     };
 
@@ -148,11 +164,12 @@ class ApiClient {
           status: response.status,
           message: responseData?.error?.message || responseData?.message || response.statusText || "An unexpected error occurred",
           code: responseData?.error?.code || responseData?.code || `HTTP_${response.status}`,
-          errors: responseData?.errors,
+          errors: responseData?.error?.details || responseData?.errors,
           requestId,
         };
 
         if (response.status === 401 && typeof window !== "undefined") {
+          localStorage.removeItem("linkpulse_auth");
           window.dispatchEvent(new CustomEvent("linkpulse:unauthorized", { detail: apiError }));
         }
 
@@ -171,7 +188,7 @@ class ApiClient {
       if (err instanceof DOMException && err.name === "AbortError") {
         throw {
           status: 408,
-          message: `Request timed out after ${timeoutMs}ms`,
+          message: `Request timed out after ${timeoutMs}ms. Backend server at ${this.baseUrl} is not responding.`,
           code: "TIMEOUT",
           requestId,
         } as ApiError;
@@ -182,9 +199,24 @@ class ApiClient {
         throw err;
       }
 
+      const isNetworkError =
+        err instanceof TypeError ||
+        (err instanceof Error &&
+          (err.message === "Failed to fetch" ||
+            err.message.includes("NetworkError") ||
+            err.message.includes("fetch failed") ||
+            err.message.includes("Load failed") ||
+            err.message.includes("Failed to load")));
+
+      const message = isNetworkError
+        ? `Backend API unreachable (${this.baseUrl}). Please ensure backend services are running or verify NEXT_PUBLIC_API_GATEWAY_URL.`
+        : err instanceof Error
+        ? err.message
+        : "Failed to communicate with API Gateway";
+
       throw {
-        status: 500,
-        message: err instanceof Error ? err.message : "Failed to communicate with API Gateway",
+        status: 503,
+        message,
         code: "NETWORK_ERROR",
         requestId,
       } as ApiError;

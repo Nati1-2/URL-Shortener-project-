@@ -1,0 +1,309 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------
+// 1. Auth Service Models
+// ----------------------------------------------------------------------
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  passwordHash   String
+  name           String
+  avatarUrl      String?
+  role           String          @default("OWNER") // OWNER, ADMIN, MEMBER
+  emailVerified  Boolean         @default(false)
+  status         String          @default("ACTIVE") // ACTIVE, SUSPENDED
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  lastLoginAt    DateTime?
+  refreshTokens  RefreshToken[]
+  passwordResets PasswordReset[]
+
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isRevoked Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([tokenHash])
+}
+
+// ----------------------------------------------------------------------
+// 2. Workspace Multi-Tenancy Models
+// ----------------------------------------------------------------------
+model Workspace {
+  id          String            @id @default(uuid())
+  name        String
+  slug        String            @unique
+  ownerId     String
+  plan        String            @default("pro")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  members     WorkspaceMember[]
+  invitations Invitation[]
+
+  @@index([ownerId])
+  @@index([slug])
+}
+
+model WorkspaceMember {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  userName    String
+  userEmail   String
+  userAvatar  String?
+  role        String    @default("MEMBER") // OWNER, ADMIN, MEMBER, VIEWER
+  joinedAt    DateTime  @default(now())
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model Invitation {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  email       String
+  role        String    @default("MEMBER")
+  token       String    @unique
+  status      String    @default("PENDING") // PENDING, ACCEPTED, DECLINED, EXPIRED
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@index([email])
+}
+
+// ----------------------------------------------------------------------
+// 3. Link Shortener Models
+// ----------------------------------------------------------------------
+model Link {
+  id           String    @id @default(uuid())
+  workspaceId  String    @default("ws_main")
+  createdBy    String    @default("usr_alex_vance")
+  title        String
+  originalUrl  String
+  shortCode    String    @unique
+  domain       String    @default("ly.nk")
+  shortUrl     String
+  status       String    @default("active") // active, password_protected, expired, archived
+  clicks       Int       @default(0)
+  passwordHash String?
+  expiresAt    DateTime?
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  tags         String    @default("[]") // JSON string array for SQLite compatibility
+  qrFgColor    String    @default("#0f172a")
+  qrBgColor    String    @default("#ffffff")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@index([shortCode])
+  @@index([domain, shortCode])
+  @@index([createdAt])
+}
+
+// ----------------------------------------------------------------------
+// 4. Analytics Telemetry Models
+// ----------------------------------------------------------------------
+model ClickEvent {
+  id          String   @id @default(uuid())
+  linkId      String
+  workspaceId String
+  shortCode   String
+  ipHash      String
+  country     String   @default("United States")
+  region      String?
+  city        String?
+  deviceType  String   @default("Desktop")
+  browser     String   @default("Chrome")
+  os          String   @default("macOS")
+  referrer    String   @default("Direct Traffic")
+  userAgent   String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  timestamp   DateTime @default(now())
+
+  @@index([workspaceId, timestamp])
+  @@index([linkId, timestamp])
+  @@index([timestamp])
+}
+
+model DailyMetric {
+  id             String   @id @default(uuid())
+  workspaceId    String
+  linkId         String?
+  date           String   // Format: YYYY-MM-DD
+  clicks         Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@unique([workspaceId, date, linkId])
+  @@index([workspaceId, date])
+}
+
+model CountryMetric {
+  id          String   @id @default(uuid())
+  workspaceId String
+  country     String
+  flag        String   @default("🇺🇸")
+  clicks      Int      @default(0)
+  percentage  Float    @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, country])
+  @@index([workspaceId])
+}
+
+model DeviceMetric {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String   // Desktop, Mobile, Tablet
+  clicks      Int      @default(0)
+  percentage  Float    @default(0)
+  color       String   @default("#3b82f6")
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+model BrowserMetric {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String   // Chrome, Safari, Firefox, Edge
+  clicks      Int      @default(0)
+  percentage  Float    @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+model ReferrerMetric {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String   // Google Search, Twitter / X, Direct Traffic
+  clicks      Int      @default(0)
+  percentage  Float    @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+// ----------------------------------------------------------------------
+// 5. Custom Domain Models
+// ----------------------------------------------------------------------
+model Domain {
+  id          String   @id @default(uuid())
+  workspaceId String   @default("ws_main")
+  hostname    String   @unique
+  status      String   @default("pending") // pending, verified, failed
+  sslStatus   String   @default("provisioning") // provisioning, active, failed
+  isCustom    Boolean  @default(true)
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([hostname])
+}
+
+// ----------------------------------------------------------------------
+// 6. Billing & Subscription Models
+// ----------------------------------------------------------------------
+model Subscription {
+  id                      String   @id @default(uuid())
+  workspaceId             String   @unique
+  planId                  String   @default("pro")
+  planName                String   @default("Pro Growth Plan")
+  status                  String   @default("active") // active, trialing, past_due, canceled
+  stripeCustomerId        String?
+  stripeSubscriptionId    String?
+  stripePriceId           String?
+  stripeCheckoutSessionId String?
+  monthlyClicksLimit      Int      @default(50000)
+  usedClicksCurrentPeriod Int      @default(0)
+  currentPeriodEnd        DateTime
+  cancelAtPeriodEnd       Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+}
+
+model Invoice {
+  id                    String   @id @default(uuid())
+  workspaceId           String
+  amount                Float
+  currency              String   @default("USD")
+  status                String   @default("paid")
+  invoiceUrl            String?
+  stripeInvoiceId       String?  @unique
+  stripePaymentIntentId String?
+  hostedInvoiceUrl      String?
+  periodStart           DateTime
+  periodEnd             DateTime
+  createdAt             DateTime @default(now())
+
+  @@index([workspaceId])
+}
+
+model WebhookEvent {
+  id            String   @id @default(uuid())
+  stripeEventId String   @unique
+  type          String
+  processedAt   DateTime @default(now())
+}
+
+// ----------------------------------------------------------------------
+// 7. Notification Models
+// ----------------------------------------------------------------------
+model Notification {
+  id          String   @id @default(uuid())
+  workspaceId String   @default("ws_main")
+  userId      String?
+  title       String
+  message     String
+  type        String   @default("info") // info, success, warning, error
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([read])
+}

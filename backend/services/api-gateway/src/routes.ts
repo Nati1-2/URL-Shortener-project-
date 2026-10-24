@@ -1,4 +1,4 @@
-import { Express } from "express";
+﻿import { Express } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { authGuard } from "./middleware/auth-guard";
 import { authRateLimiter } from "./middleware/rate-limiter";
@@ -111,3 +111,4 @@ export function setupProxyRoutes(app: Express) {
     })
   );
 }
+

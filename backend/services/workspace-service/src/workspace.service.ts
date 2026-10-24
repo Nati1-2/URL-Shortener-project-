@@ -12,7 +12,7 @@ import { createLogger } from "@linkpulse/logger";
 const logger = createLogger("workspace-service");
 
 export class WorkspaceService {
-  public async getWorkspaces(userId: string) {
+  public async getWorkspaces(userId: string, userInfo?: { userName?: string; userEmail?: string }) {
     const memberships = await prisma.workspaceMember.findMany({
       where: { userId },
       include: {
@@ -27,11 +27,12 @@ export class WorkspaceService {
 
     if (memberships.length === 0) {
       // Auto-provision personal workspace if user has none
+      const name = userInfo?.userName ? `${userInfo.userName}'s Workspace` : "Personal Workspace";
       const personalWs = await this.createWorkspace({
-        name: "My Personal Workspace",
+        name,
         ownerId: userId,
-        userName: "Alex Vance",
-        userEmail: "alex@linkpulse.io",
+        userName: userInfo?.userName || "User",
+        userEmail: userInfo?.userEmail || "",
       });
       return [personalWs];
     }

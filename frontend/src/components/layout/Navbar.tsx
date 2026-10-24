@@ -100,16 +100,36 @@ export const Navbar: React.FC = () => {
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          <Link href="/dashboard">
-            <Button
-              variant="glow"
-              size="sm"
-              className="px-5 font-bold shadow-md shadow-blue-500/25"
-              rightIcon={<ArrowRight className="w-4 h-4" />}
-            >
-              Go to Dashboard
-            </Button>
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/dashboard">
+              <Button
+                variant="glow"
+                size="sm"
+                className="px-5 font-bold shadow-md shadow-blue-500/25"
+                rightIcon={<ArrowRight className="w-4 h-4" />}
+              >
+                Go to Dashboard
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="font-semibold">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button
+                  variant="glow"
+                  size="sm"
+                  className="px-5 font-bold shadow-md shadow-blue-500/25"
+                  rightIcon={<ArrowRight className="w-4 h-4" />}
+                >
+                  Get Started Free
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Trigger */}
@@ -146,9 +166,20 @@ export const Navbar: React.FC = () => {
               <a href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
             </nav>
             <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2.5">
-              <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="glow" className="w-full">Go to Dashboard</Button>
-              </Link>
+              {isAuthenticated ? (
+                <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="glow" className="w-full">Go to Dashboard</Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full">Sign In</Button>
+                  </Link>
+                  <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="glow" className="w-full">Get Started Free</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}

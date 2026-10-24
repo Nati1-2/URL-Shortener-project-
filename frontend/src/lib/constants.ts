@@ -8,15 +8,6 @@ export const DOMAINS = [
   { value: "go.brand.io", label: "go.brand.io (Custom)" },
 ];
 
-export const MOCK_USER = {
-  id: "usr_99812",
-  name: "Alex Vance",
-  email: "alex.vance@acme.inc",
-  role: "Pro Account",
-  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
-  plan: "Pro Plan",
-};
-
 export const PRICING_PLANS = [
   {
     id: "free",

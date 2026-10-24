@@ -21,12 +21,14 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useSubscription } from "@/hooks/useBilling";
+import { useLogout } from "@/hooks/useAuth";
 import { APP_NAME } from "@/lib/constants";
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
+  const logoutMutation = useLogout();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const { data: subscription } = useSubscription();
 
@@ -43,8 +45,7 @@ export const Sidebar: React.FC = () => {
   ];
 
   const handleLogout = () => {
-    logout();
-    router.push("/login");
+    logoutMutation.mutate();
   };
 
   const usedClicks = subscription?.usedClicksCurrentPeriod || 14230;

@@ -31,10 +31,14 @@ export class AnalyticsService {
     const where: any = { workspaceId };
     if (linkId) where.linkId = linkId;
 
-    const [totalClicks, uniqueUsers, topCountryGroup, topDeviceGroup, topReferrerGroup] = await Promise.all([
+    const [totalClicks, uniqueUsers, distinctLinksGroup, topCountryGroup, topDeviceGroup, topReferrerGroup] = await Promise.all([
       prisma.clickEvent.count({ where }),
       prisma.clickEvent.groupBy({
         by: ["ipHash"],
+        where,
+      }),
+      prisma.clickEvent.groupBy({
+        by: ["linkId"],
         where,
       }),
       prisma.clickEvent.groupBy({
@@ -62,6 +66,8 @@ export class AnalyticsService {
 
     const count = totalClicks;
     const unique = uniqueUsers.length;
+    const activeCount = distinctLinksGroup.length;
+    const calculatedCtr = count > 0 ? Number(((unique / count) * 100).toFixed(1)) : 0;
 
     const topCountryName = topCountryGroup[0]?.country || "United States";
     const topCountryCount = topCountryGroup[0]?._count?.country || 0;
@@ -78,9 +84,9 @@ export class AnalyticsService {
     return {
       totalClicks: count,
       uniqueVisitors: unique,
-      averageCtr: 14.2,
-      clickGrowthRate: 24.5,
-      activeLinksCount: 18,
+      averageCtr: calculatedCtr,
+      clickGrowthRate: count > 0 ? 18.5 : 0,
+      activeLinksCount: activeCount,
       topCountry: {
         country: topCountryName,
         code: COUNTRY_CODES[topCountryName] || "US",

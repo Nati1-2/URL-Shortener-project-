@@ -13,8 +13,8 @@ import {
   BarChart3,
   Users,
   Check,
+  Lock,
 } from "lucide-react";
-import { UrlShortenerWidget } from "@/components/landing/UrlShortenerWidget";
 import { UrlTransformationAnimation } from "@/components/landing/UrlTransformationAnimation";
 import { FeatureGrid } from "@/components/landing/FeatureGrid";
 import { DashboardPreview } from "@/components/landing/DashboardPreview";
@@ -67,11 +67,32 @@ export default function LandingPage() {
           </p>
         </RevealOnScroll>
 
+        {/* Hero Call to Action Buttons */}
+        <RevealOnScroll direction="up" delay={0.24} duration={0.65}>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <Link href="/register">
+              <Button variant="glow" size="xl" rightIcon={<ArrowRight className="w-5 h-5" />}>
+                Get Started Free
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button variant="outline" size="xl" leftIcon={<Lock className="w-4 h-4" />}>
+                Sign In to Workspace
+              </Button>
+            </Link>
+            <Link href="/pricing">
+              <Button variant="ghost" size="xl" className="text-slate-600 dark:text-slate-300">
+                View Pricing Plans →
+              </Button>
+            </Link>
+          </div>
+        </RevealOnScroll>
+
         {/* 4 Feature Badges Row (Staggered Animation) */}
         <StaggerGroup
           staggerDelay={0.08}
           delayChildren={0.22}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4 max-w-4xl mx-auto pt-2 text-left"
+          className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4 max-w-4xl mx-auto pt-6 text-left"
         >
           {/* Feature 1 */}
           <StaggerItem>
@@ -125,13 +146,6 @@ export default function LandingPage() {
             </div>
           </StaggerItem>
         </StaggerGroup>
-
-        {/* Interactive URL Shortener Widget */}
-        <RevealOnScroll direction="up" delay={0.28} duration={0.7}>
-          <div className="pt-2">
-            <UrlShortenerWidget />
-          </div>
-        </RevealOnScroll>
 
         {/* Social Proof Metrics Bar */}
         <RevealOnScroll direction="up" delay={0.35} duration={0.7}>

@@ -8,7 +8,18 @@ const logger = createLogger("billing-service");
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
-const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const APP_URL = process.env.APP_URL || "http://localhost:3000";
+const PRICE_IDS: Record<string, string | undefined> = {
+  "pro:monthly": process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+  "pro:yearly": process.env.STRIPE_PRO_YEARLY_PRICE_ID,
+  "enterprise:monthly": process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID,
+  "enterprise:yearly": process.env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID,
+};
+
+function requireStripe(): Stripe {
+  if (!stripe) throw new BadRequestError("Billing is not configured. Set STRIPE_SECRET_KEY on the server.");
+  return stripe;
+}
 
 const stripe = STRIPE_SECRET_KEY
   ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2025-01-27.acacia" as any })
@@ -171,27 +182,22 @@ export class BillingService {
   }
 
   public async getSubscription(workspaceId: string = "ws_main") {
-    let sub: any;
-    try {
-      sub = await prisma.subscription.findUnique({
-        where: { workspaceId },
-      });
+    let sub = await prisma.subscription.findUnique({
+      where: { workspaceId },
+    });
 
-      if (!sub) {
-        sub = await prisma.subscription.create({
-          data: {
-            workspaceId,
-            planId: "pro",
-            planName: "Pro Growth Plan",
-            status: "active",
-            monthlyClicksLimit: 50000,
-            usedClicksCurrentPeriod: 14230,
-            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          },
-        });
-      }
-    } catch {
-      sub = await memoryStore.getSubscription(workspaceId);
+    if (!sub) {
+      sub = await prisma.subscription.create({
+        data: {
+          workspaceId,
+          planId: "free",
+          planName: "Starter Hobby",
+          status: "active",
+          monthlyClicksLimit: 1000,
+          usedClicksCurrentPeriod: 0,
+          currentPeriodEnd: new Date(),
+        },
+      });
     }
 
     return {
@@ -371,18 +377,21 @@ export class BillingService {
   }
 
   public async handleStripeWebhook(rawBody: Buffer | string | any, signature?: string) {
-    let event: any;
-
-    if (stripe && signature && STRIPE_WEBHOOK_SECRET) {
-      try {
-        event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
-      } catch (err: any) {
-        logger.error("Stripe Webhook Signature Verification Failed:", err.message);
-        throw new BadRequestError(`Webhook signature verification failed: ${err.message}`);
-      }
-    } else {
-      event = typeof rawBody === "string" ? JSON.parse(rawBody) : Buffer.isBuffer(rawBody) ? JSON.parse(rawBody.toString()) : rawBody;
+    if (!signature || !STRIPE_WEBHOOK_SECRET) {
+      throw new BadRequestError("Stripe webhook signature configuration is missing.");
     }
+
+    let event: Stripe.Event;
+    try {
+      event = requireStripe().webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+    } catch (err: any) {
+      logger.error("Stripe webhook signature verification failed", err);
+      throw new BadRequestError("Webhook signature verification failed.");
+    }
+
+    const previous = await prisma.webhookEvent.findUnique({ where: { stripeEventId: event.id } });
+    if (previous) return { received: true, duplicate: true };
+    await prisma.webhookEvent.create({ data: { stripeEventId: event.id, type: event.type } });
 
     logger.info("Processing Stripe webhook event", { type: event.type });
 

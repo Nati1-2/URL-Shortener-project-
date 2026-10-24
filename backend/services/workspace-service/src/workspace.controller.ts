@@ -5,8 +5,13 @@ import { successResponse, BadRequestError } from "@linkpulse/common";
 export class WorkspaceController {
   public async getWorkspaces(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = String(req.headers["x-user-id"] || "usr_alex_vance");
-      const list = await workspaceService.getWorkspaces(userId);
+      const userId = String(req.headers["x-user-id"] || "");
+      if (!userId) {
+        return res.status(401).json({ success: false, error: { code: "UNAUTHORIZED", message: "Authentication required" } });
+      }
+      const userName = String(req.headers["x-user-name"] || "User");
+      const userEmail = String(req.headers["x-user-email"] || "");
+      const list = await workspaceService.getWorkspaces(userId, { userName, userEmail });
       return res.status(200).json(successResponse(list));
     } catch (err) {
       next(err);

@@ -171,7 +171,13 @@ export default function LoginPage() {
                 type="button"
                 variant="outline"
                 size="md"
-                onClick={() => handleSubmit({ preventDefault: () => {} } as any)}
+                onClick={() =>
+                  addToast({
+                    type: "info",
+                    title: "Google SSO",
+                    message: "Enterprise SSO is configured per workspace domain.",
+                  })
+                }
                 className="text-xs"
               >
                 Google SSO
@@ -180,7 +186,13 @@ export default function LoginPage() {
                 type="button"
                 variant="outline"
                 size="md"
-                onClick={() => handleSubmit({ preventDefault: () => {} } as any)}
+                onClick={() =>
+                  addToast({
+                    type: "info",
+                    title: "GitHub SSO",
+                    message: "GitHub authentication is available for developer workspaces.",
+                  })
+                }
                 leftIcon={<Github className="w-4 h-4" />}
                 className="text-xs"
               >

@@ -34,7 +34,11 @@ export class LinkController {
   public async getLinkById(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const link = await linkService.getLinkById(id);
+      const link = await linkService.getLinkById(
+        id,
+        req.headers["x-user-id"] ? String(req.headers["x-user-id"]) : undefined,
+        req.headers["x-workspace-id"] ? String(req.headers["x-workspace-id"]) : undefined
+      );
       return res.status(200).json(successResponse(link));
     } catch (err) {
       next(err);
@@ -87,7 +91,7 @@ export class LinkController {
   public async updateLink(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const updated = await linkService.updateLink(id, req.body);
+      const updated = await linkService.updateLink(id, req.body, String(req.headers["x-user-id"]));
       return res.status(200).json(successResponse(updated, "Link updated successfully"));
     } catch (err) {
       next(err);
@@ -97,7 +101,7 @@ export class LinkController {
   public async deleteLink(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      await linkService.deleteLink(id);
+      await linkService.deleteLink(id, String(req.headers["x-user-id"]));
       return res.status(200).json(successResponse(null, "Link deleted successfully"));
     } catch (err) {
       next(err);
@@ -110,7 +114,7 @@ export class LinkController {
       if (!Array.isArray(ids) || ids.length === 0) {
         throw new BadRequestError("Array of link IDs is required.");
       }
-      await linkService.bulkDeleteLinks(ids);
+      await linkService.bulkDeleteLinks(ids, String(req.headers["x-user-id"]));
       return res.status(200).json(successResponse(null, "Links deleted successfully"));
     } catch (err) {
       next(err);
@@ -133,7 +137,7 @@ export class LinkController {
   public async getStats(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const stats = await linkService.getLinkStats(id);
+      const stats = await linkService.getLinkStats(id, String(req.headers["x-user-id"]));
       return res.status(200).json(successResponse(stats));
     } catch (err) {
       next(err);

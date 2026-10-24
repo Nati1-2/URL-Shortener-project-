@@ -55,25 +55,25 @@ export const Footer: React.FC = () => {
               Product
             </h4>
             <ul className="space-y-2.5 text-sm font-medium">
-              <li><Link href="/" className="hover:text-blue-600 dark:hover:text-white transition-colors">URL Shortener</Link></li>
-              <li><Link href="/create" className="hover:text-blue-600 dark:hover:text-white transition-colors">QR Code Generator</Link></li>
-              <li><Link href="/analytics" className="hover:text-blue-600 dark:hover:text-white transition-colors">Click Analytics</Link></li>
+              <li><Link href="/register" className="hover:text-blue-600 dark:hover:text-white transition-colors">URL Shortener</Link></li>
+              <li><Link href="/pricing" className="hover:text-blue-600 dark:hover:text-white transition-colors">QR Code Generator</Link></li>
+              <li><Link href="/pricing" className="hover:text-blue-600 dark:hover:text-white transition-colors">Click Telemetry</Link></li>
               <li><Link href="/pricing" className="hover:text-blue-600 dark:hover:text-white transition-colors">Custom Domains</Link></li>
               <li><Link href="/pricing" className="hover:text-blue-600 dark:hover:text-white transition-colors">Pricing Plans</Link></li>
             </ul>
           </div>
 
-          {/* Resources */}
+          {/* Resources & Access */}
           <div className="space-y-3">
             <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-slate-200">
-              Resources
+              Platform & Access
             </h4>
             <ul className="space-y-2.5 text-sm font-medium">
-              <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">API Documentation</a></li>
-              <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">Integrations</a></li>
-              <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">Customer Stories</a></li>
-              <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">System Status</a></li>
-              <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">Changelog</a></li>
+              <li><Link href="/login" className="hover:text-blue-600 dark:hover:text-white transition-colors">Sign In to Dashboard</Link></li>
+              <li><Link href="/register" className="hover:text-blue-600 dark:hover:text-white transition-colors">Create Free Account</Link></li>
+              <li><a href="/#features" className="hover:text-blue-600 dark:hover:text-white transition-colors">Platform Features</a></li>
+              <li><a href="/#faq" className="hover:text-blue-600 dark:hover:text-white transition-colors">Frequently Asked Questions</a></li>
+              <li><Link href="/pricing" className="hover:text-blue-600 dark:hover:text-white transition-colors">Enterprise SLA</Link></li>
             </ul>
           </div>
 
@@ -102,9 +102,9 @@ export const Footer: React.FC = () => {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-4">
           <p>© {new Date().getFullYear()} {APP_NAME} SaaS Inc. All rights reserved.</p>
           <div className="flex items-center gap-6 font-medium">
-            <a href="#" className="hover:text-slate-900 dark:text-slate-300 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-slate-900 dark:text-slate-300 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-slate-900 dark:text-slate-300 transition-colors">Cookie Settings</a>
+            <Link href="/pricing" className="hover:text-slate-900 dark:text-slate-300 transition-colors">Terms of Service</Link>
+            <Link href="/pricing" className="hover:text-slate-900 dark:text-slate-300 transition-colors">Privacy Policy</Link>
+            <Link href="/pricing" className="hover:text-slate-900 dark:text-slate-300 transition-colors">Security Overview</Link>
           </div>
         </div>
       </div>
